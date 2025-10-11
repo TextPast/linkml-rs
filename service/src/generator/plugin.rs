@@ -327,7 +327,14 @@ mod tests {
     #[tokio::test]
     async fn test_plugin_registration() -> anyhow::Result<()> {
         let registry = Arc::new(GeneratorRegistry::new());
-        let config = PluginConfig::default();
+
+        // Create a temporary directory for plugins
+        let temp_dir = tempfile::tempdir()?;
+        let config = PluginConfig {
+            plugin_dir: temp_dir.path().to_path_buf(),
+            auto_discover: false,
+            settings: HashMap::new(),
+        };
         let mut manager = PluginManager::new(config, registry.clone());
 
         // Create a test generator
