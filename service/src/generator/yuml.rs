@@ -610,7 +610,7 @@ mod tests {
 
         for style in &["plain", "scruffy", "nofunky"] {
             let yuml_options = YumlOptions {
-                style: style.to_string(),
+                style: (*style).to_string(),
                 ..Default::default()
             };
 

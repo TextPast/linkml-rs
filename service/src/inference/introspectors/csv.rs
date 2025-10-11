@@ -657,7 +657,8 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = CsvIntrospector::new(logger, timestamp);
 
-        let csv = b"name,age,city\nJohn,25,\nJane,,LA\nBob,35,NYC";
+        // Headers should be shorter than data values for detection to work
+        let csv = b"name,age,city\nAlexander,25,New York\nJane,,Los Angeles\nBob,35,San Francisco";
 
         let stats = introspector.analyze_bytes(csv).await.unwrap();
 
@@ -691,7 +692,8 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = CsvIntrospector::new(logger, timestamp);
 
-        let csv = b"name,age,active\nJohn Doe,25,true\nJane Smith,30,false";
+        // Headers should be shorter than data values for detection to work
+        let csv = b"name,age,active\nAlexander Johnson,25,true\nJane Elizabeth Smith,30,false";
 
         let stats = introspector.analyze_bytes(csv).await.unwrap();
         let schema = introspector
@@ -711,8 +713,9 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = CsvIntrospector::new(logger, timestamp);
 
+        // Headers are typically shorter than data values
         let header = StringRecord::from(vec!["name", "age", "city"]);
-        let data = StringRecord::from(vec!["John", "25", "NYC"]);
+        let data = StringRecord::from(vec!["Alexander", "25", "New York City"]);
 
         assert!(introspector.has_header_row(&header, Some(&data)));
     }

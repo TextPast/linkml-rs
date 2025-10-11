@@ -966,8 +966,10 @@ mod tests {
     #[tokio::test]
     async fn test_html_generation() -> anyhow::Result<()> {
         // Create generator with documentation enabled
-        let mut options = crate::generator::GeneratorOptions::default();
-        options.include_docs = true;
+        let options = crate::generator::GeneratorOptions {
+            include_docs: true,
+            ..Default::default()
+        };
         let generator = HtmlGenerator::with_options(options);
 
         let mut schema = SchemaDefinition {

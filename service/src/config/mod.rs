@@ -739,7 +739,7 @@ pub mod test_helpers {
                 max_string_length: 10000,
                 max_expression_depth: 50,
                 max_constraint_count: 1000,
-                max_cache_entries: 100000,
+                max_cache_entries: 100_000,
                 max_function_args: 20,
                 max_identifier_length: 256,
                 max_json_size_bytes: 10_000_000,

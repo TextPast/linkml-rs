@@ -745,6 +745,19 @@ impl CodeFormatter for TypeQLGenerator {
     }
 }
 
+/// Create a new `TypeQL` generator using the factory pattern
+///
+/// This is the preferred way to create a `TypeQL` generator, ensuring proper
+/// initialization and following `RootReal`'s factory pattern standards.
+///
+/// # Returns
+///
+/// Returns a configured `TypeQL` generator instance
+#[must_use]
+pub fn create_typeql_generator() -> TypeQLGenerator {
+    TypeQLGenerator::new()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -803,17 +816,4 @@ mod tests {
         assert_eq!(generator.convert_identifier("person_name"), "person-name");
         assert_eq!(generator.convert_identifier("PERSON_NAME"), "person-name");
     }
-}
-
-/// Create a new `TypeQL` generator using the factory pattern
-///
-/// This is the preferred way to create a `TypeQL` generator, ensuring proper
-/// initialization and following `RootReal`'s factory pattern standards.
-///
-/// # Returns
-///
-/// Returns a configured `TypeQL` generator instance
-#[must_use]
-pub fn create_typeql_generator() -> TypeQLGenerator {
-    TypeQLGenerator::new()
 }

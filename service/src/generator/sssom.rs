@@ -698,8 +698,8 @@ mod tests {
     use super::*;
     use linkml_core::types::{ClassDefinition, SchemaDefinition};
 
-    #[test]
-    fn test_sssom_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_sssom_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition {
             name: "TestSchema".to_string(),
             id: "https://example.com/test-schema".to_string(),
