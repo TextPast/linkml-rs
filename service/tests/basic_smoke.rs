@@ -6,9 +6,11 @@ use serde_json::json;
 
 #[tokio::test]
 async fn validates_simple_instance() -> linkml_core::error::Result<()> {
-    let mut schema = SchemaDefinition::default();
-    schema.id = "https://example.org/smoke".to_string();
-    schema.name = "SmokeTest".to_string();
+    let mut schema = SchemaDefinition {
+        id: "https://example.org/smoke".to_string(),
+        name: "SmokeTest".to_string(),
+        ..Default::default()
+    };
 
     let person = ClassDefinition {
         name: "Person".to_string(),

@@ -761,7 +761,7 @@ mod tests {
     fn test_default_inference_config() {
         let config = InferenceConfig::default();
         assert_eq!(config.min_samples_for_type_inference, 5);
-        assert!((config.type_inference_confidence_threshold - 0.8).abs() < f64::EPSILON);
+        assert!((config.type_inference_confidence_threshold - 0.8).abs() < f32::EPSILON);
         assert!(config.generate_descriptions);
         assert_eq!(config.max_nesting_depth, 10);
     }
@@ -771,7 +771,7 @@ mod tests {
     fn test_aggregated_stats_creation() {
         let aggregated = AggregatedStats::new();
         assert_eq!(aggregated.document_count, 0);
-        assert!(aggregated.confidence.abs() < f64::EPSILON);
+        assert!(aggregated.confidence.abs() < f32::EPSILON);
         assert!(aggregated.elements.is_empty());
         assert!(aggregated.source_documents.is_empty());
     }
@@ -806,7 +806,7 @@ mod tests {
 
         // 1 document: 0.5 confidence
         aggregated.merge(DocumentStats::new("doc1".to_string(), "xml".to_string()));
-        assert!((aggregated.confidence - 0.5).abs() < f64::EPSILON);
+        assert!((aggregated.confidence - 0.5).abs() < f32::EPSILON);
 
         // 2 documents: >0.5
         aggregated.merge(DocumentStats::new("doc2".to_string(), "xml".to_string()));
@@ -816,13 +816,13 @@ mod tests {
         for i in 3..=5 {
             aggregated.merge(DocumentStats::new(format!("doc{}", i), "xml".to_string()));
         }
-        assert!((aggregated.confidence - 0.8).abs() < f64::EPSILON);
+        assert!((aggregated.confidence - 0.8).abs() < f32::EPSILON);
 
         // 10+ documents: 0.95
         for i in 6..=11 {
             aggregated.merge(DocumentStats::new(format!("doc{}", i), "xml".to_string()));
         }
-        assert!((aggregated.confidence - 0.95).abs() < f64::EPSILON);
+        assert!((aggregated.confidence - 0.95).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -831,7 +831,7 @@ mod tests {
         votes.add_samples(&["10".to_string(), "20".to_string(), "30".to_string()]);
 
         assert_eq!(votes.majority_type(), InferredType::Integer);
-        assert!((votes.confidence() - 1.0).abs() < f64::EPSILON); // All samples agree
+        assert!((votes.confidence() - 1.0).abs() < f32::EPSILON); // All samples agree
     }
 
     #[test]
@@ -851,7 +851,7 @@ mod tests {
         votes.add_samples(&["true".to_string(), "false".to_string(), "TRUE".to_string()]);
 
         assert_eq!(votes.majority_type(), InferredType::Boolean);
-        assert!((votes.confidence() - 1.0).abs() < f64::EPSILON);
+        assert!((votes.confidence() - 1.0).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -863,7 +863,7 @@ mod tests {
         ]);
 
         assert_eq!(votes.majority_type(), InferredType::Uri);
-        assert!((votes.confidence() - 1.0).abs() < f64::EPSILON);
+        assert!((votes.confidence() - 1.0).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -880,7 +880,7 @@ mod tests {
         element.merge_element_stats(&stats2, 2);
 
         // Same min/max should give 1.0 confidence
-        assert!((element.cardinality_confidence() - 1.0).abs() < f64::EPSILON);
+        assert!((element.cardinality_confidence() - 1.0).abs() < f32::EPSILON);
     }
 
     #[test]

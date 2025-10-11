@@ -8,7 +8,6 @@ use linkml_service::inference::introspectors::ExcelIntrospector;
 use linkml_service::inference::{
     CsvIntrospector, DataIntrospector, JsonIntrospector, XmlIntrospector,
 };
-use logger_core::LoggerConfig;
 use logger_service::wiring::wire_logger;
 use std::sync::Arc;
 use timestamp_service::wiring::wire_timestamp;

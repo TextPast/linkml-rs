@@ -610,7 +610,7 @@ mod tests {
 
     #[test]
     fn test_different_schema_names_detected() {
-        let mut schema1 = create_test_schema();
+        let schema1 = create_test_schema();
         let mut schema2 = create_test_schema();
         schema2.name = "different_name".to_string();
 

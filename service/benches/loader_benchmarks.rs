@@ -121,7 +121,7 @@ fn create_multi_sheet_excel(
 
     for sheet_idx in 0..sheets {
         let worksheet = workbook.add_worksheet();
-        worksheet.set_name(&format!("Sheet{sheet_idx}"))?;
+        worksheet.set_name(format!("Sheet{sheet_idx}"))?;
 
         // Write headers
         worksheet.write_string(0, 0, "id")?;
@@ -220,7 +220,7 @@ fn bench_excel_loader_multi_sheet(c: &mut Criterion) {
 
         let mut schema = SchemaDefinition::new("multi_schema");
         for i in 0..*sheets {
-            let mut class_def = ClassDefinition::new(&format!("Sheet{i}"));
+            let mut class_def = ClassDefinition::new(format!("Sheet{i}"));
             class_def.attributes.insert(
                 "id".to_string(),
                 SlotDefinition {

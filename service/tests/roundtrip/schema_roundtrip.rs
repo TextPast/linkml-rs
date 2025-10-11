@@ -2,14 +2,13 @@
 //!
 //! Tests: Schema → Excel → Schema conversion with semantic equivalence validation
 
-use super::equivalence::{EquivalenceResult, compare_schemas};
+use super::equivalence::compare_schemas;
 use linkml_core::prelude::*;
 use linkml_service::generator::excel::ExcelGenerator;
 use linkml_service::inference::DataIntrospector;
 use linkml_service::inference::introspectors::excel::ExcelIntrospector;
 use logger_service::wiring::wire_logger;
 use serde_json::json;
-use std::path::PathBuf;
 use tempfile::TempDir;
 use timestamp_service::wiring::wire_timestamp;
 
