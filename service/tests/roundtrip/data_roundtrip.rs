@@ -21,9 +21,12 @@ fn create_test_services() -> (
     std::sync::Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let timestamp = wire_timestamp().into_arc();
-    let logger = wire_logger(timestamp.clone(), logger_core::types::LoggerConfig::default())
-        .expect("Failed to wire logger")
-        .into_arc();
+    let logger = wire_logger(
+        timestamp.clone(),
+        logger_core::types::LoggerConfig::default(),
+    )
+    .expect("Failed to wire logger")
+    .into_arc();
     (logger, timestamp)
 }
 

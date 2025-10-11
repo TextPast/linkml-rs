@@ -215,9 +215,8 @@ fn bench_xml_introspector_sizes(c: &mut Criterion) {
             let introspector = create_xml_introspector();
 
             b.iter(|| {
-                runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(data).await.unwrap())
-                })
+                runtime
+                    .block_on(async { black_box(introspector.analyze_bytes(data).await.unwrap()) })
             });
         });
     }
@@ -238,9 +237,8 @@ fn bench_xml_introspector_depth(c: &mut Criterion) {
             let introspector = create_xml_introspector();
 
             b.iter(|| {
-                runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(data).await.unwrap())
-                })
+                runtime
+                    .block_on(async { black_box(introspector.analyze_bytes(data).await.unwrap()) })
             });
         });
     }
@@ -256,9 +254,7 @@ fn bench_xml_page_xml_analysis(c: &mut Criterion) {
         let data = generate_page_xml().as_bytes();
 
         b.iter(|| {
-            runtime.block_on(async {
-                black_box(introspector.analyze_bytes(data).await.unwrap())
-            })
+            runtime.block_on(async { black_box(introspector.analyze_bytes(data).await.unwrap()) })
         });
     });
 }
@@ -300,9 +296,8 @@ fn bench_json_introspector_sizes(c: &mut Criterion) {
             let introspector = create_json_introspector();
 
             b.iter(|| {
-                runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(data).await.unwrap())
-                })
+                runtime
+                    .block_on(async { black_box(introspector.analyze_bytes(data).await.unwrap()) })
             });
         });
     }
@@ -323,9 +318,8 @@ fn bench_json_introspector_depth(c: &mut Criterion) {
             let introspector = create_json_introspector();
 
             b.iter(|| {
-                runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(data).await.unwrap())
-                })
+                runtime
+                    .block_on(async { black_box(introspector.analyze_bytes(data).await.unwrap()) })
             });
         });
     }
@@ -341,9 +335,7 @@ fn bench_json_complex_schema(c: &mut Criterion) {
         let data = generate_complex_json().as_bytes();
 
         b.iter(|| {
-            runtime.block_on(async {
-                black_box(introspector.analyze_bytes(data).await.unwrap())
-            })
+            runtime.block_on(async { black_box(introspector.analyze_bytes(data).await.unwrap()) })
         });
     });
 }
@@ -385,9 +377,8 @@ fn bench_csv_introspector_sizes(c: &mut Criterion) {
             let introspector = create_csv_introspector();
 
             b.iter(|| {
-                runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(data).await.unwrap())
-                })
+                runtime
+                    .block_on(async { black_box(introspector.analyze_bytes(data).await.unwrap()) })
             });
         });
     }

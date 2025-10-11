@@ -18,9 +18,12 @@ fn create_test_services() -> (
     Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let timestamp = timestamp_service::wiring::wire_timestamp().into_arc();
-    let logger = logger_service::wiring::wire_logger(timestamp.clone(), logger_core::types::LoggerConfig::default())
-        .expect("Failed to wire logger")
-        .into_arc();
+    let logger = logger_service::wiring::wire_logger(
+        timestamp.clone(),
+        logger_core::types::LoggerConfig::default(),
+    )
+    .expect("Failed to wire logger")
+    .into_arc();
     (logger, timestamp)
 }
 

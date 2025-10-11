@@ -618,8 +618,7 @@ mod tests {
             .expect("should evaluate simple expression: {}");
         // Accept both integer and float representations of 7
         assert!(
-            result == Value::Number(serde_json::Number::from(7))
-                || result == json!(7.0),
+            result == Value::Number(serde_json::Number::from(7)) || result == json!(7.0),
             "Expected 7 or 7.0, got {:?}",
             result
         );

@@ -681,11 +681,7 @@ pub mod test_helpers {
                 enable_cache: true,
                 cache_ttl_seconds: 3600,
                 max_file_size_bytes: 10_000_000,
-                supported_formats: vec![
-                    "yaml".to_string(),
-                    "json".to_string(),
-                    "xml".to_string(),
-                ],
+                supported_formats: vec!["yaml".to_string(), "json".to_string(), "xml".to_string()],
                 max_import_depth: 10,
             },
             validator: ValidatorConfig {
@@ -782,8 +778,12 @@ pub mod test_helpers {
             },
             cli: CliConfig {
                 default_iterations: 100,
-                progress_bar_template: "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})".to_string(),
-                progress_bar_finish_template: "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len}".to_string(),
+                progress_bar_template:
+                    "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})"
+                        .to_string(),
+                progress_bar_finish_template:
+                    "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len}"
+                        .to_string(),
             },
         }
     }
