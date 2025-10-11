@@ -965,7 +965,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_html_generation() -> anyhow::Result<()> {
-        let generator = HtmlGenerator::new();
+        // Create generator with documentation enabled
+        let mut options = crate::generator::GeneratorOptions::default();
+        options.include_docs = true;
+        let generator = HtmlGenerator::with_options(options);
 
         let mut schema = SchemaDefinition {
             id: "test".to_string(),
@@ -1001,9 +1004,10 @@ mod tests {
     fn test_html_escaping() {
         let generator = HtmlGenerator::new();
 
+        // Forward slash is escaped to &#x2F; for additional XSS protection
         assert_eq!(
             generator.escape_html("Test <script>alert('XSS')</script>"),
-            "Test &lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;"
+            "Test &lt;script&gt;alert(&#39;XSS&#39;)&lt;&#x2F;script&gt;"
         );
 
         assert_eq!(

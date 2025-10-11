@@ -385,13 +385,12 @@ mod tests {
 
     #[test]
     fn test_string_escaping() {
-        let test_str = "Hello \"world\"
-New line\t\ttab";
+        let test_str = "Hello \"world\"\nNew line\t\ttab";
         let escaped_py = BaseCodeFormatter::escape_python_string(test_str);
+        // Newlines should be escaped to \\n, quotes to \\\", tabs to \\t
         assert_eq!(
             escaped_py,
-            "Hello \\\"world\\\"\
-New line\\t\\ttab"
+            "Hello \\\"world\\\"\\nNew line\\t\\ttab"
         );
     }
 }

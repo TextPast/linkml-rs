@@ -606,6 +606,7 @@ impl Default for EngineBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn test_basic_evaluation() -> std::result::Result<(), Box<dyn std::error::Error>> {

@@ -487,7 +487,8 @@ mod tests {
 
         // Should contain summary and person class (entity is abstract)
         assert!(result.contains("Type,Name,Description,Count"));
-        assert!(result.contains("Class,,Schema classes,2"));
+        // Format: Class,,,Schema classes,{count} (3 delimiters for 4 columns)
+        assert!(result.contains("Class,,,Schema classes,2"));
         assert!(result.contains("=== Person ==="));
         // Slots are in alphabetical order due to BTreeMap
         assert!(result.contains("age,id,name"));
