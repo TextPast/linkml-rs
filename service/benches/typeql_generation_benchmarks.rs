@@ -185,7 +185,6 @@ fn create_rule_heavy_schema(num_rules: usize) -> SchemaDefinition {
         let requirement = ConditionalRequirement {
             condition: Some(condition),
             then_required: Some(vec!["created_at".to_string()]),
-            ..Default::default()
         };
 
         let mut map = class.if_required.take().unwrap_or_default();

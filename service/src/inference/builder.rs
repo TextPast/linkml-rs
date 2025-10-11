@@ -358,7 +358,9 @@ impl ClassBuilder {
             description: None,
             ..Default::default()
         };
-        self.attributes.insert(attr_name, slot);
+        self.attributes.insert(attr_name.clone(), slot);
+        // Also add to slots list so the class knows it uses this slot
+        self.slots.push(attr_name);
         self
     }
 

@@ -453,8 +453,10 @@ fn bench_validation_options(c: &mut Criterion) {
     });
 
     // Cache disabled
-    let mut no_cache_options = ValidationOptions::default();
-    no_cache_options.use_cache = Some(false);
+    let no_cache_options = ValidationOptions {
+        use_cache: Some(false),
+        ..Default::default()
+    };
 
     group.bench_function("no_cache", |b| {
         b.to_async(&runtime).iter(|| async {

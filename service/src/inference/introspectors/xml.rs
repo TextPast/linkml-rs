@@ -420,11 +420,12 @@ impl DataIntrospector for XmlIntrospector {
                         if let Some(children_counts) = parent_children_count.remove(&popped_element)
                         {
                             if let Some(element_stats) = stats.elements.get_mut(&popped_element) {
+                                let parent_occurrence_count = element_stats.occurrence_count;
                                 for (child_name, count) in children_counts {
                                     if let Some(child_stats) =
                                         element_stats.children.get_mut(&child_name)
                                     {
-                                        child_stats.update_occurs(count, count);
+                                        child_stats.update_occurs(count, parent_occurrence_count);
                                     }
                                 }
                             }
@@ -467,6 +468,25 @@ impl DataIntrospector for XmlIntrospector {
                 _ => {}
             }
             buf.clear();
+        }
+
+        // Finalize child cardinality statistics now that we know final parent counts
+        // We need to iterate over elements and update their children's total_parent_instances
+        let element_names: Vec<String> = stats.elements.keys().cloned().collect();
+        for element_name in element_names {
+            if let Some(element_stats) = stats.elements.get(&element_name) {
+                let parent_total_count = element_stats.occurrence_count;
+                let child_names: Vec<String> = element_stats.children.keys().cloned().collect();
+
+                for child_name in child_names {
+                    if let Some(element_stats_mut) = stats.elements.get_mut(&element_name) {
+                        if let Some(child_stats) = element_stats_mut.children.get_mut(&child_name) {
+                            // Update total_parent_instances to the final count
+                            child_stats.total_parent_instances = Some(parent_total_count);
+                        }
+                    }
+                }
+            }
         }
 
         // Update metrics

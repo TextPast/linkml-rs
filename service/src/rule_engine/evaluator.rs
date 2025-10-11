@@ -443,7 +443,7 @@ mod tests {
             equals_expression_ast: None,
         };
 
-        let mut validation_ctx = ValidationContext::new(Default::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let context = RuleExecutionContext::new(
             json!({"name": "test"}),
             "Person".to_string(),
@@ -473,7 +473,7 @@ mod tests {
         let parser = crate::expression::parser::Parser::new();
         let expr = parser.parse("{age} >= 21")?;
 
-        let mut validation_ctx = ValidationContext::new(Default::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let context = RuleExecutionContext::new(
             json!({"age": 18}),
             "Person".to_string(),

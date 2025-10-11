@@ -189,8 +189,10 @@ async fn test_multi_sheet_data_roundtrip() -> std::result::Result<(), Box<dyn st
 
     // Load data with wildcard to get all sheets
     use linkml_service::loader::ExcelOptions;
-    let mut excel_options = ExcelOptions::default();
-    excel_options.target_sheet = Some("*".to_string());
+    let excel_options = ExcelOptions {
+        target_sheet: Some("*".to_string()),
+        ..Default::default()
+    };
 
     let loader = ExcelLoader::with_options(logger, timestamp, excel_options);
     let options = LoadOptions::default();
@@ -229,8 +231,10 @@ async fn test_optional_fields_data_roundtrip() -> std::result::Result<(), Box<dy
 
     // Load data
     let loader = ExcelLoader::new(logger, timestamp);
-    let mut options = LoadOptions::default();
-    options.target_class = Some("Contact".to_string());
+    let options = LoadOptions {
+        target_class: Some("Contact".to_string()),
+        ..Default::default()
+    };
 
     let instances = loader.load_file(&excel_path, &schema, &options).await?;
 

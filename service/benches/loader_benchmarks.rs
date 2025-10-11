@@ -99,7 +99,7 @@ fn create_test_excel(rows: usize) -> std::result::Result<TempDir, Box<dyn std::e
     for i in 0..rows {
         let row = (i + 1) as u32;
         worksheet.write_number(row, 0, i as f64)?;
-        worksheet.write_string(row, 1, &format!("Value {i}"))?;
+        worksheet.write_string(row, 1, format!("Value {i}"))?;
         worksheet.write_number(row, 2, (i as f64) * 1.5)?;
         worksheet.write_number(row, 3, (i * 2) as f64)?;
         worksheet.write_boolean(row, 4, i % 2 == 0)?;
@@ -132,7 +132,7 @@ fn create_multi_sheet_excel(
         for row_idx in 0..rows_per_sheet {
             let row = (row_idx + 1) as u32;
             worksheet.write_number(row, 0, (sheet_idx * rows_per_sheet + row_idx) as f64)?;
-            worksheet.write_string(row, 1, &format!("Sheet{sheet_idx}_Row{row_idx}"))?;
+            worksheet.write_string(row, 1, format!("Sheet{sheet_idx}_Row{row_idx}"))?;
             worksheet.write_number(row, 2, row_idx as f64)?;
         }
     }

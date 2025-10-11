@@ -1235,11 +1235,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_loader_creation() {
-        let mut options = ApiOptions::default();
-        options.base_url = "https://api.example.com".to_string();
-        options
-            .headers
-            .insert("Accept".to_string(), "application/json".to_string());
+        let mut headers = std::collections::HashMap::new();
+        headers.insert("Accept".to_string(), "application/json".to_string());
+
+        let options = ApiOptions {
+            base_url: "https://api.example.com".to_string(),
+            headers,
+            ..Default::default()
+        };
 
         let loader = ApiLoader::new(options);
         assert!(
@@ -1285,22 +1288,28 @@ mod tests {
         let mut attributes = IndexMap::new();
 
         // Add required name field
-        let mut name_slot = SlotDefinition::default();
-        name_slot.required = Some(true);
-        name_slot.range = Some("string".to_string());
+        let name_slot = SlotDefinition {
+            required: Some(true),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         attributes.insert("name".to_string(), name_slot);
 
         // Add age field with min/max constraints
-        let mut age_slot = SlotDefinition::default();
-        age_slot.minimum_value = Some(serde_json::json!(0));
-        age_slot.maximum_value = Some(serde_json::json!(150));
-        age_slot.range = Some("integer".to_string());
+        let age_slot = SlotDefinition {
+            minimum_value: Some(serde_json::json!(0)),
+            maximum_value: Some(serde_json::json!(150)),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        };
         attributes.insert("age".to_string(), age_slot);
 
         // Add email field with pattern
-        let mut email_slot = SlotDefinition::default();
-        email_slot.pattern = Some(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2}$".to_string());
-        email_slot.range = Some("string".to_string());
+        let email_slot = SlotDefinition {
+            pattern: Some(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2}$".to_string()),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         attributes.insert("email".to_string(), email_slot);
 
         person_class.attributes = attributes;

@@ -532,8 +532,10 @@ emails:
         std::fs::write(temp_file.path(), yaml_content)?;
 
         let mut schema = SchemaDefinition::default();
-        let mut class = ClassDefinition::default();
-        class.slots = vec!["name".to_string(), "age".to_string(), "emails".to_string()];
+        let class = ClassDefinition {
+            slots: vec!["name".to_string(), "age".to_string(), "emails".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), class);
 
         let loader = YamlLoader::new();

@@ -189,11 +189,10 @@ mod tests {
     #[test]
     fn test_handle_creation() {
         let service = Arc::new(MockLinkMLService);
+        let service_ptr = Arc::as_ptr(&service);
         let handle = LinkMLHandle::new(service);
-        assert!(std::ptr::eq(
-            std::ptr::from_ref(handle.as_ref()),
-            std::ptr::from_ref(&MockLinkMLService)
-        ));
+        let handle_ptr = std::ptr::from_ref(handle.as_ref());
+        assert!(std::ptr::eq(handle_ptr, service_ptr));
     }
 
     #[test]

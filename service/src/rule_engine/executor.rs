@@ -283,7 +283,7 @@ mod tests {
         let rule = create_test_rule()?;
 
         // Test with adult without ID
-        let mut validation_ctx = ValidationContext::new(Default::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let mut context = RuleExecutionContext::new(
             json!({
                 "age": 25,
@@ -300,7 +300,7 @@ mod tests {
         assert!(issues[0].message.contains("required"));
 
         // Test with adult with ID
-        let mut validation_ctx2 = ValidationContext::new(Default::default());
+        let mut validation_ctx2 = ValidationContext::new(Arc::default());
         let mut context2 = RuleExecutionContext::new(
             json!({
                 "age": 25,
@@ -317,7 +317,7 @@ mod tests {
         assert!(issues2.is_empty());
 
         // Test with minor (rule shouldn't apply)
-        let mut validation_ctx3 = ValidationContext::new(Default::default());
+        let mut validation_ctx3 = ValidationContext::new(Arc::default());
         let mut context3 = RuleExecutionContext::new(
             json!({
                 "age": 16,
@@ -339,7 +339,7 @@ mod tests {
         let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
         let rules = vec![create_test_rule()?];
 
-        let mut validation_ctx = ValidationContext::new(Default::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let mut context = RuleExecutionContext::new(
             json!({
                 "age": 25,
@@ -355,7 +355,7 @@ mod tests {
             .expect("should execute rules sequentially: {}");
         assert_eq!(sequential_issues.len(), 1);
 
-        let mut validation_ctx2 = ValidationContext::new(Default::default());
+        let mut validation_ctx2 = ValidationContext::new(Arc::default());
         let mut context2 = RuleExecutionContext::new(
             json!({
                 "age": 25,

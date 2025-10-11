@@ -1030,9 +1030,11 @@ mod tests {
         };
 
         // Add a class
-        let mut person_class = ClassDefinition::default();
-        person_class.name = "Person".to_string();
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            name: "Person".to_string(),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Add a slot
@@ -1068,10 +1070,12 @@ mod tests {
         let old_schema = create_test_schema("test");
         let mut new_schema = old_schema.clone();
 
-        let mut employee_class = ClassDefinition::default();
-        employee_class.name = "Employee".to_string();
-        employee_class.is_a = Some("Person".to_string());
-        employee_class.slots = vec!["employee_id".to_string()];
+        let employee_class = ClassDefinition {
+            name: "Employee".to_string(),
+            is_a: Some("Person".to_string()),
+            slots: vec!["employee_id".to_string()],
+            ..Default::default()
+        };
         new_schema
             .classes
             .insert("Employee".to_string(), employee_class);

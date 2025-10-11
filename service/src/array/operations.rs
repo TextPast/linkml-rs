@@ -208,7 +208,7 @@ impl ArrayOperations for ArrayData {
                 (Value::Number(n1), Value::Number(n2)) => {
                     let v1 = n1.as_f64().unwrap_or(0.0);
                     let v2 = n2.as_f64().unwrap_or(1.0);
-                    if v2 == 0.0 {
+                    if v2.abs() < f64::EPSILON {
                         a.clone() // Keep original on division by zero
                     } else {
                         Value::Number(serde_json::Number::from_f64(v1 / v2).unwrap_or(n1.clone()))
@@ -548,10 +548,10 @@ mod tests {
         let array = ArrayData::new(spec, vec![5], data)
             .expect("test data should create valid array - statistics test: {}");
 
-        assert_eq!(array.sum().expect("sum should succeed: {}"), 15.0);
-        assert_eq!(array.mean().expect("mean should succeed: {}"), 3.0);
-        assert_eq!(array.min().expect("min should succeed: {}"), 1.0);
-        assert_eq!(array.max().expect("max should succeed: {}"), 5.0);
+        assert!((array.sum().expect("sum should succeed: {}") - 15.0).abs() < f64::EPSILON);
+        assert!((array.mean().expect("mean should succeed: {}") - 3.0).abs() < f64::EPSILON);
+        assert!((array.min().expect("min should succeed: {}") - 1.0).abs() < f64::EPSILON);
+        assert!((array.max().expect("max should succeed: {}") - 5.0).abs() < f64::EPSILON);
         assert!(
             (array.std_dev().expect("std_dev should succeed: {}") - 1.581_138_83).abs() < 0.00001
         );

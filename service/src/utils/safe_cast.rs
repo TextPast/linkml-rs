@@ -220,11 +220,11 @@ mod tests {
 
     #[test]
     fn test_usize_to_f64() {
-        assert_eq!(usize_to_f64(0), 0.0);
-        assert_eq!(usize_to_f64(1000), 1000.0);
+        assert!(usize_to_f64(0).abs() < f64::EPSILON);
+        assert!((usize_to_f64(1000) - 1000.0).abs() < f64::EPSILON);
         // Test precision boundary
         let max_precise = (1_u64 << 53) - 1;
-        assert_eq!(usize_to_f64(max_precise as usize), max_precise as f64);
+        assert!((usize_to_f64(max_precise as usize) - max_precise as f64).abs() < f64::EPSILON);
     }
 
     #[test]

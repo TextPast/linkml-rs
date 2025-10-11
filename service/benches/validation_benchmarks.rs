@@ -134,12 +134,15 @@ fn create_conditional_schema() -> SchemaDefinition {
     let mut class = ClassDefinition::new("ConditionalEntity");
     class.slots = vec!["type".to_string(), "value".to_string()];
 
-    let mut slot_condition = SlotCondition::default();
-    slot_condition.equals_string = Some("special".to_string());
+    let slot_condition = SlotCondition {
+        equals_string: Some("special".to_string()),
+        ..Default::default()
+    };
 
-    let mut requirement = ConditionalRequirement::default();
-    requirement.condition = Some(slot_condition);
-    requirement.then_required = Some(vec!["value".to_string()]);
+    let requirement = ConditionalRequirement {
+        condition: Some(slot_condition),
+        then_required: Some(vec!["value".to_string()]),
+    };
 
     let mut condition_map = IndexMap::new();
     condition_map.insert("type".to_string(), requirement);

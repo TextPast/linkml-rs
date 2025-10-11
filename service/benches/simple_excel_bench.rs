@@ -37,13 +37,13 @@ fn create_test_excel_file(rows: usize) -> NamedTempFile {
     for row in 1..=rows {
         worksheet.write_number(row as u32, 0, row as f64).unwrap();
         worksheet
-            .write_string(row as u32, 1, &format!("Person {}", row))
+            .write_string(row as u32, 1, format!("Person {}", row))
             .unwrap();
         worksheet
             .write_number(row as u32, 2, (25 + (row % 50)) as f64)
             .unwrap();
         worksheet
-            .write_string(row as u32, 3, &format!("person{}@example.com", row))
+            .write_string(row as u32, 3, format!("person{}@example.com", row))
             .unwrap();
         worksheet
             .write_boolean(row as u32, 4, row % 2 == 0)

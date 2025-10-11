@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 //! # LinkML Client
 //!
 //! Client library for interacting with LinkML validation services.

@@ -719,10 +719,10 @@ mod tests {
     async fn test_singularize() {
         // Test basic pluralization rules (simple heuristic, not full inflection)
         assert_eq!(singularize("entries"), "entry"); // -ies -> -y
-        assert_eq!(singularize("addresses"), "addresse"); // -sses -> -ss
+        assert_eq!(singularize("addresses"), "address"); // -sses -> remove -es
         assert_eq!(singularize("boxes"), "boxe"); // -es -> -e (after x)
         assert_eq!(singularize("items"), "item"); // -s -> remove s
-        assert_eq!(singularize("people"), "peopl"); // -s -> remove s (irregular plural not handled)
+        assert_eq!(singularize("people"), "people_item"); // no 's' suffix -> add _item (irregular plural not handled)
         assert_eq!(singularize("data"), "data_item"); // no 's' suffix -> add _item
     }
 
