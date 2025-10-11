@@ -181,8 +181,10 @@ fn bench_excel_loader_1000_rows(c: &mut Criterion) {
     let (logger, timestamp) = create_test_services();
     let loader = ExcelLoader::new(logger, timestamp);
     let schema = create_test_schema();
-    let mut options = LoadOptions::default();
-    options.target_class = Some("Data".to_string());
+    let options = LoadOptions {
+        target_class: Some("Data".to_string()),
+        ..Default::default()
+    };
 
     c.bench_function("excel_loader_1000_rows", |b| {
         b.iter(|| {
@@ -210,8 +212,10 @@ fn bench_excel_loader_multi_sheet(c: &mut Criterion) {
         let (logger, timestamp) = create_test_services();
 
         use linkml_service::loader::ExcelOptions;
-        let mut excel_options = ExcelOptions::default();
-        excel_options.target_sheet = Some("*".to_string());
+        let excel_options = ExcelOptions {
+            target_sheet: Some("*".to_string()),
+            ..Default::default()
+        };
         let loader = ExcelLoader::with_options(logger, timestamp, excel_options);
 
         let mut schema = SchemaDefinition::new("multi_schema");
@@ -275,8 +279,10 @@ fn bench_excel_loader_type_conversion(c: &mut Criterion) {
     let (logger, timestamp) = create_test_services();
     let loader = ExcelLoader::new(logger, timestamp);
     let schema = create_test_schema();
-    let mut options = LoadOptions::default();
-    options.target_class = Some("Data".to_string());
+    let options = LoadOptions {
+        target_class: Some("Data".to_string()),
+        ..Default::default()
+    };
 
     c.bench_function("excel_loader_type_conversion", |b| {
         b.iter(|| {
@@ -302,8 +308,10 @@ fn bench_excel_loader_bytes(c: &mut Criterion) {
     let (logger, timestamp) = create_test_services();
     let loader = ExcelLoader::new(logger, timestamp);
     let schema = create_test_schema();
-    let mut options = LoadOptions::default();
-    options.target_class = Some("Data".to_string());
+    let options = LoadOptions {
+        target_class: Some("Data".to_string()),
+        ..Default::default()
+    };
 
     c.bench_function("excel_loader_bytes", |b| {
         b.iter(|| {

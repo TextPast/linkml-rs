@@ -99,11 +99,11 @@ fn create_complex_schema(num_relations: usize) -> SchemaDefinition {
 
     // Create base entity classes
     for i in 0..5 {
-        let mut class = ClassDefinition {
+        let class = ClassDefinition {
             slots: vec!["id".to_string()],
             ..Default::default()
         };
-        schema.classes.insert(format!("Entity{}", i), class);
+        schema.classes.insert(format!("Entity{i}"), class);
     }
 
     // Create relation classes
@@ -177,12 +177,16 @@ fn create_rule_heavy_schema(num_rules: usize) -> SchemaDefinition {
         class.rules.push(rule);
 
         // Add conditional requirements
-        let mut condition = SlotCondition::default();
-        condition.equals_string = Some("special".to_string());
+        let condition = SlotCondition {
+            equals_string: Some("special".to_string()),
+            ..Default::default()
+        };
 
-        let mut requirement = ConditionalRequirement::default();
-        requirement.condition = Some(condition);
-        requirement.then_required = Some(vec!["created_at".to_string()]);
+        let requirement = ConditionalRequirement {
+            condition: Some(condition),
+            then_required: Some(vec!["created_at".to_string()]),
+            ..Default::default()
+        };
 
         let mut map = class.if_required.take().unwrap_or_default();
         map.insert("name".to_string(), requirement);

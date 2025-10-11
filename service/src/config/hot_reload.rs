@@ -226,6 +226,7 @@ mod tests {
     #[deprecated(
         note = "Use configuration_integration module instead for proper RootReal integration"
     )]
+    #[allow(deprecated)]
     // This test is deprecated in favor of configuration_integration module tests
     // but kept for backwards compatibility during migration
     async fn test_hot_reload_creation() -> std::result::Result<(), anyhow::Error> {
@@ -249,6 +250,7 @@ mod tests {
     #[deprecated(
         note = "Use configuration_integration module instead for proper RootReal integration"
     )]
+    #[allow(deprecated)]
     // This test is deprecated in favor of configuration_integration module tests
     // but kept for backwards compatibility during migration
     async fn test_hot_reload_watching() -> std::result::Result<(), anyhow::Error> {
