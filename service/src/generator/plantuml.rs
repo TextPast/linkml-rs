@@ -1000,10 +1000,11 @@ mod tests {
             // Future enhancement: could add doc generation
         }
 
+        // Mindmaps use @startmindmap/@endmindmap, not @startuml/@enduml
         assert!(output.contains("@startmindmap"));
-        assert!(output.contains("@startuml"));
         assert!(output.contains("@endmindmap"));
         assert!(output.contains("** Classes"));
+        assert!(output.contains("* TestSchema")); // Root node
         Ok(())
     }
 }
