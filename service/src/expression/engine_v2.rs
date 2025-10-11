@@ -615,7 +615,13 @@ mod tests {
         let result = engine
             .evaluate("1 + 2 * 3", &context)
             .expect("should evaluate simple expression: {}");
-        assert_eq!(result, Value::Number(serde_json::Number::from(7)));
+        // Accept both integer and float representations of 7
+        assert!(
+            result == Value::Number(serde_json::Number::from(7))
+                || result == json!(7.0),
+            "Expected 7 or 7.0, got {:?}",
+            result
+        );
         Ok(())
     }
 

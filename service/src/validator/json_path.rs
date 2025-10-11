@@ -62,7 +62,7 @@ impl JsonPath {
                         if next_ch == '.' || next_ch == '[' {
                             break;
                         }
-                        property.push(ch);
+                        property.push(chars.next().unwrap()); // Consume the character
                     }
                     if property.is_empty() {
                         return Err(LinkMLError::parse(format!(

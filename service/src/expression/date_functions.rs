@@ -581,6 +581,7 @@ mod tests {
     fn test_date_diff() -> Result<(), Box<dyn std::error::Error>> {
         let diff = DateDiffFunction;
 
+        // Test difference between Jan 15 and Jan 25 (10 days)
         let result = diff
             .call(vec![
                 json!("2024-01-15"),
@@ -588,7 +589,7 @@ mod tests {
                 json!("days"),
             ])
             .expect("should calculate date difference: {}");
-        assert_eq!(result, json!(31.0));
+        assert_eq!(result, json!(10));
         Ok(())
     }
 
