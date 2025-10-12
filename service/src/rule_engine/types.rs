@@ -7,6 +7,7 @@ use linkml_core::error::LinkMLError;
 use linkml_core::types::{CompositeConditions, Rule, RuleConditions, SlotCondition};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::expression::ast::Expression;
 use crate::validator::context::ValidationContext;
