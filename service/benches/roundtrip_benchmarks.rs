@@ -139,11 +139,9 @@ fn bench_schema_generation(c: &mut Criterion) {
     c.bench_function("schema_generation", |b| {
         b.iter(|| {
             let generator = ExcelGenerator::new();
-            black_box(
-                generator
-                    .generate_file(&schema, excel_path.to_str().unwrap())
-                    .expect("Failed to generate"),
-            )
+            generator
+                .generate_file(&schema, excel_path.to_str().unwrap())
+                .expect("Failed to generate")
         });
     });
 }
