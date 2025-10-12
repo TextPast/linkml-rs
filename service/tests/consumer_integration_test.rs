@@ -9,6 +9,7 @@ use linkml_core::traits::{LinkMLService, LinkMLServiceExt};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
+use testing_mocks::MockTimestampService;
 
 // RootReal service dependencies
 use logger_core::traits::LoggerService;
@@ -368,73 +369,7 @@ mod test_mocks {
     }
 }
 
-    // Mock timestamp service
-    pub struct MockTimestamp;
 
-    #[async_trait]
-    impl TimestampService for MockTimestamp {
-        type Error = timestamp_core::error::TimestampError;
-
-        async fn now_utc(&self) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            Ok(chrono::Utc::now())
-        }
-
-        async fn now_local(
-            &self,
-        ) -> std::result::Result<chrono::DateTime<chrono::Local>, Self::Error> {
-            Ok(chrono::Local::now())
-        }
-
-        async fn system_time(&self) -> std::result::Result<std::time::SystemTime, Self::Error> {
-            Ok(std::time::SystemTime::now())
-        }
-
-        async fn parse_iso8601(
-            &self,
-            _timestamp: &str,
-        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            Ok(chrono::Utc::now())
-        }
-
-        async fn format_iso8601(
-            &self,
-            timestamp: &chrono::DateTime<chrono::Utc>,
-        ) -> std::result::Result<String, Self::Error> {
-            Ok(timestamp.to_rfc3339())
-        }
-
-        async fn duration_since(
-            &self,
-            earlier: &chrono::DateTime<chrono::Utc>,
-        ) -> std::result::Result<chrono::TimeDelta, Self::Error> {
-            let now = chrono::Utc::now();
-            Ok(now - *earlier)
-        }
-
-        async fn add_duration(
-            &self,
-            timestamp: &chrono::DateTime<chrono::Utc>,
-            duration: chrono::TimeDelta,
-        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            Ok(*timestamp + duration)
-        }
-
-        async fn subtract_duration(
-            &self,
-            timestamp: &chrono::DateTime<chrono::Utc>,
-            duration: chrono::TimeDelta,
-        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            Ok(*timestamp - duration)
-        }
-
-        async fn duration_between(
-            &self,
-            from: &chrono::DateTime<chrono::Utc>,
-            to: &chrono::DateTime<chrono::Utc>,
-        ) -> std::result::Result<chrono::TimeDelta, Self::Error> {
-            Ok(*to - *from)
-        }
-    }
 
     // Mock cache service
     pub struct MockCache;
@@ -696,7 +631,7 @@ async fn create_test_services() -> TestServices {
     let _logger: Arc<dyn LoggerService<Error = logger_core::error::LoggerError>> =
         Arc::new(MockLogger);
     let _timestamp: Arc<dyn TimestampService<Error = timestamp_core::error::TimestampError>> =
-        Arc::new(MockTimestamp);
+        Arc::new(MockTimestampService::new());
     let _cache: Arc<dyn CacheService<Error = cache_core::error::CacheError>> = Arc::new(MockCache);
     let _monitor: Arc<dyn MonitoringService<Error = monitoring_core::error::MonitoringError>> =
         Arc::new(MockMonitor);
