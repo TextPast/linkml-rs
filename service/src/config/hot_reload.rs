@@ -223,12 +223,10 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[tokio::test]
-    #[deprecated(
-        note = "Use configuration_integration module instead for proper RootReal integration"
-    )]
     #[allow(deprecated)]
     // This test is deprecated in favor of configuration_integration module tests
-    // but kept for backwards compatibility during migration
+    // but kept for backwards compatibility during migration.
+    // The entire hot_reload module is deprecated - see mod.rs
     async fn test_hot_reload_creation() -> std::result::Result<(), anyhow::Error> {
         // Create a test config and serialize it to a temp file
         let temp_file = NamedTempFile::new()?;
@@ -247,12 +245,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[deprecated(
-        note = "Use configuration_integration module instead for proper RootReal integration"
-    )]
     #[allow(deprecated)]
     // This test is deprecated in favor of configuration_integration module tests
-    // but kept for backwards compatibility during migration
+    // but kept for backwards compatibility during migration.
+    // The entire hot_reload module is deprecated - see mod.rs
     async fn test_hot_reload_watching() -> std::result::Result<(), anyhow::Error> {
         // Create a test config and serialize it to a temp file
         let temp_file = NamedTempFile::new()?;
