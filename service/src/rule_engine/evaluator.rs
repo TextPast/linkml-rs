@@ -5,7 +5,6 @@
 
 use serde_json::Value;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::expression::ExpressionEngine;
 use crate::validator::report::{Severity, ValidationIssue};
@@ -431,6 +430,7 @@ mod tests {
     use crate::validator::context::ValidationContext;
     use linkml_core::types::SlotCondition;
     use serde_json::json;
+    use std::sync::Arc;
 
     #[test]
     fn test_required_field_evaluation() -> std::result::Result<(), Box<dyn std::error::Error>> {

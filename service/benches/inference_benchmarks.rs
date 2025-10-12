@@ -462,7 +462,7 @@ fn bench_excel_introspector_sizes(c: &mut Criterion) {
                     for row in 1..=size {
                         worksheet.write_number(row as u32, 0, row as f64).unwrap();
                         worksheet
-                            .write_string(row as u32, 1, &format!("Item {}", row))
+                            .write_string(row as u32, 1, format!("Item {}", row))
                             .unwrap();
                         worksheet
                             .write_number(row as u32, 2, (row as f64) * 1.5)
@@ -511,7 +511,7 @@ fn bench_excel_multi_sheet(c: &mut Criterion) {
                     for sheet_idx in 0..sheets {
                         let worksheet = workbook
                             .add_worksheet()
-                            .set_name(&format!("Sheet{}", sheet_idx + 1))
+                            .set_name(format!("Sheet{}", sheet_idx + 1))
                             .unwrap();
 
                         // Headers
@@ -522,7 +522,7 @@ fn bench_excel_multi_sheet(c: &mut Criterion) {
                         for row in 1..=100 {
                             worksheet.write_number(row, 0, row as f64).unwrap();
                             worksheet
-                                .write_string(row, 1, &format!("Data {}", row))
+                                .write_string(row, 1, format!("Data {}", row))
                                 .unwrap();
                         }
                     }
@@ -567,7 +567,7 @@ fn bench_excel_schema_generation(c: &mut Criterion) {
                 for row in 1..=1000 {
                     worksheet.write_number(row, 0, row as f64).unwrap();
                     worksheet
-                        .write_string(row, 1, &format!("Person {}", row))
+                        .write_string(row, 1, format!("Person {}", row))
                         .unwrap();
                     worksheet
                         .write_number(row, 2, (25 + (row % 50)) as f64)
@@ -625,7 +625,7 @@ fn bench_excel_end_to_end(c: &mut Criterion) {
                 for row in 1..=50 {
                     customer.write_number(row, 0, row as f64).unwrap();
                     customer
-                        .write_string(row, 1, &format!("Customer {}", row))
+                        .write_string(row, 1, format!("Customer {}", row))
                         .unwrap();
                 }
 
@@ -678,7 +678,7 @@ fn bench_excel_typical_workbook(c: &mut Criterion) {
                 for sheet_idx in 0..10 {
                     let worksheet = workbook
                         .add_worksheet()
-                        .set_name(&format!("Sheet{}", sheet_idx + 1))
+                        .set_name(format!("Sheet{}", sheet_idx + 1))
                         .unwrap();
 
                     // 5 columns
@@ -692,14 +692,14 @@ fn bench_excel_typical_workbook(c: &mut Criterion) {
                     for row in 1..=1000 {
                         worksheet.write_number(row, 0, row as f64).unwrap();
                         worksheet
-                            .write_string(row, 1, &format!("Item {}", row))
+                            .write_string(row, 1, format!("Item {}", row))
                             .unwrap();
                         worksheet.write_number(row, 2, (row as f64) * 1.5).unwrap();
                         worksheet
                             .write_string(row, 3, if row % 2 == 0 { "active" } else { "inactive" })
                             .unwrap();
                         worksheet
-                            .write_string(row, 4, &format!("Cat{}", row % 5))
+                            .write_string(row, 4, format!("Cat{}", row % 5))
                             .unwrap();
                     }
                 }
