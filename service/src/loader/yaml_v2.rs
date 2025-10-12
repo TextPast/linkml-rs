@@ -303,7 +303,7 @@ mod tests {
 
         let mut loader = YamlLoaderV2::new();
         let schema = SchemaDefinition::default();
-        let instances = loader.load_file(&file_path, &schema, fs).await?;
+        let instances = loader.load_file(file_path, &schema, fs).await?;
 
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");

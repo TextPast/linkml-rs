@@ -414,7 +414,7 @@ mod tests {
             "value": 42
         });
 
-        let mut validation_ctx = ValidationContext::new(Default::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let ctx = RuleExecutionContext::new(
             instance.clone(),
             "TestClass".to_string(),

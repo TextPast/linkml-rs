@@ -339,9 +339,9 @@ mod tests {
 
     #[test]
     fn test_plugin_discovery_shallow() -> std::result::Result<(), LinkMLError> {
-        let temp_dir = TempDir::new().map_err(|e| LinkMLError::IoError(e))?;
+        let temp_dir = TempDir::new().map_err(LinkMLError::IoError)?;
         let plugin_file = temp_dir.path().join("plugin.toml");
-        fs::write(&plugin_file, "# Plugin manifest").map_err(|e| LinkMLError::IoError(e))?;
+        fs::write(&plugin_file, "# Plugin manifest").map_err(LinkMLError::IoError)?;
 
         let discovery = PluginDiscovery::new();
         let plugins = discovery.discover(temp_dir.path(), DiscoveryStrategy::Shallow)?;

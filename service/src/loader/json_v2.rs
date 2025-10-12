@@ -302,7 +302,7 @@ mod tests {
         let mut loader = JsonLoaderV2::new();
         let schema = SchemaDefinition::default();
         let instances = loader
-            .load_file(&file_path, &schema, fs)
+            .load_file(file_path, &schema, fs)
             .await
             .expect("should load JSON file: {}");
 
@@ -369,7 +369,7 @@ mod tests {
             .read_to_string(jsonl_path)
             .await
             .expect("should read JSONL file: {}");
-        let lines: Vec<&str> = jsonl_content.trim().split('\n').collect();
+        let lines: Vec<&str> = jsonl_content.lines().collect();
         assert_eq!(lines.len(), 2);
     }
 }

@@ -362,7 +362,11 @@ mod tests {
             "30".to_string(),
         ]);
         assert_eq!(inferred, InferredType::Integer);
-        assert_eq!(confidence, 1.0);
+        // Exact comparison is appropriate for testing confidence scores
+        #[allow(clippy::float_cmp)]
+        {
+            assert_eq!(confidence, 1.0);
+        }
 
         // Mixed types - lower confidence
         let (inferred, confidence) = inferencer.infer_with_confidence(&[

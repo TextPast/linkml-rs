@@ -1159,7 +1159,11 @@ mod tests {
 
         assert_eq!(config.max_retries, 3);
         assert_eq!(config.initial_delay_ms, 100);
-        assert_eq!(config.backoff_factor, 2.0);
+        // Exact comparison is appropriate for testing default config values
+        #[allow(clippy::float_cmp)]
+        {
+            assert_eq!(config.backoff_factor, 2.0);
+        }
         assert!(config.retry_on_status.contains(&429));
         assert!(config.retry_on_status.contains(&503));
     }

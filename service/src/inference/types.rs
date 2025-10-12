@@ -930,7 +930,11 @@ mod tests {
         child.total_parent_instances = 10;
 
         let confidence = child.cardinality_confidence();
-        assert_eq!(confidence, 0.8); // 8/10 = 0.8
+        // Exact comparison is appropriate for testing calculated confidence values
+        #[allow(clippy::float_cmp)]
+        {
+            assert_eq!(confidence, 0.8); // 8/10 = 0.8
+        }
     }
 
     #[test]

@@ -786,7 +786,7 @@ mod tests {
         let slot = SlotDefinition::default();
         schema.slots.insert("BadSlotName".to_string(), slot);
 
-        let rule = NamingConventionRule::default();
+        let rule = NamingConventionRule;
         let issues = rule.check(&schema);
 
         assert_eq!(issues.len(), 2);
@@ -806,7 +806,7 @@ mod tests {
         let class = ClassDefinition::default();
         schema.classes.insert("MyClass".to_string(), class);
 
-        let rule = UnusedDefinitionsRule::default();
+        let rule = UnusedDefinitionsRule;
         let issues = rule.check(&schema);
 
         assert_eq!(issues.len(), 1);

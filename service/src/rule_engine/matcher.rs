@@ -485,7 +485,7 @@ mod tests {
 
         assert!(
             matcher
-                .match_expression_conditions(&[expr.clone()], &context)
+                .match_expression_conditions(std::slice::from_ref(&expr), &context)
                 .expect("should match expression: {}")
         );
 

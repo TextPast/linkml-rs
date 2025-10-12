@@ -286,8 +286,8 @@ mod tests {
 
         // Test RFC3339 formatting
         let rfc3339 = utils.now_rfc3339().await?;
-        assert!(rfc3339.contains("T"));
-        assert!(rfc3339.contains("Z"));
+        assert!(rfc3339.contains('T'));
+        assert!(rfc3339.contains('Z'));
 
         // Test date parsing
         let date = TimestampUtils::parse_date("2024-01-15")?;

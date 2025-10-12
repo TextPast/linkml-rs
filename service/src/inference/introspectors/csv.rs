@@ -790,7 +790,7 @@ mod tests {
         let mut col = ColumnStats::new("test".to_string());
 
         col.record_value("value1".to_string());
-        col.record_value("".to_string()); // Empty value
+        col.record_value(String::new()); // Empty value
         col.record_value("value3".to_string());
 
         assert!(!col.is_required());

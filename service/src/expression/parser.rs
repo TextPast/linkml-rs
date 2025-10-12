@@ -749,7 +749,7 @@ mod tests {
         );
         assert_eq!(
             parser.parse("3.14").expect("should parse float: {}"),
-            Expression::Number(3.14)
+            Expression::Number(std::f64::consts::PI)
         );
         assert_eq!(
             parser.parse("\"hello\"").expect("should parse string: {}"),
