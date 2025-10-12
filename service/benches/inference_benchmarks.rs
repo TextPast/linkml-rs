@@ -170,7 +170,7 @@ type TimestampArc =
 
 fn create_inference_services() -> (LoggerArc, TimestampArc) {
     let timestamp = wire_timestamp().into_arc();
-    let logger = wire_logger(timestamp.clone())
+    let logger = wire_logger(timestamp.clone(), logger_core::LoggerConfig::default())
         .expect("Failed to wire logger for inference benchmarks")
         .into_arc();
     (logger, timestamp)

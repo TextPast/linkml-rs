@@ -5,6 +5,7 @@
 
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::expression::ExpressionEngine;
 use crate::validator::report::{Severity, ValidationIssue};
