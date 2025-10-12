@@ -1,6 +1,11 @@
 //! Configuration hot-reload functionality
 //!
 //! This module provides automatic configuration reloading when files change.
+//!
+//! **Note:** This entire module is deprecated in favor of `configuration_integration`.
+//! See `config/mod.rs` for details. Tests are kept for backwards compatibility during migration.
+
+#![allow(deprecated)]
 
 use super::{LinkMLConfig, load_config, validation::validate_values};
 use linkml_core::error::LinkMLError;
