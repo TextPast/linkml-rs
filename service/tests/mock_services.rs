@@ -24,6 +24,7 @@ use monitoring_core::{
     SystemHealthReport, SystemPerformanceMetrics,
 };
 use task_management_core::{TaskId, TaskManagementError, TaskManagementService, TaskOptions};
+use testing_mocks::MockTimestampService;
 use timestamp_core::{TimestampError, TimestampService};
 
 // Import DBMS and Timeout services
@@ -115,74 +116,9 @@ impl LoggerService for MockLoggerService {
     }
 }
 
-pub struct MockTimestampService;
-
-#[async_trait]
-impl TimestampService for MockTimestampService {
-    type Error = TimestampError;
-
-    async fn now_utc(&self) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-        Ok(chrono::Utc::now())
-    }
-
-    async fn now_local(&self) -> Result<chrono::DateTime<chrono::Local>, Self::Error> {
-        Ok(chrono::Local::now())
-    }
-
-    async fn system_time(&self) -> Result<std::time::SystemTime, Self::Error> {
-        Ok(std::time::SystemTime::now())
-    }
-
-    async fn parse_iso8601(
-        &self,
-        timestamp: &str,
-    ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-        use chrono::DateTime;
-        Ok(DateTime::parse_from_rfc3339(timestamp)
-            .map_err(|e| TimestampError::ParseError {
-                message: e.to_string().into(),
-            })?
-            .with_timezone(&chrono::Utc))
-    }
-
-    async fn format_iso8601(
-        &self,
-        timestamp: &chrono::DateTime<chrono::Utc>,
-    ) -> Result<String, Self::Error> {
-        Ok(timestamp.to_rfc3339())
-    }
-
-    async fn duration_since(
-        &self,
-        timestamp: &chrono::DateTime<chrono::Utc>,
-    ) -> Result<chrono::Duration, Self::Error> {
-        Ok(chrono::Utc::now() - *timestamp)
-    }
-
-    async fn add_duration(
-        &self,
-        timestamp: &chrono::DateTime<chrono::Utc>,
-        duration: chrono::Duration,
-    ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-        Ok(*timestamp + duration)
-    }
-
-    async fn subtract_duration(
-        &self,
-        timestamp: &chrono::DateTime<chrono::Utc>,
-        duration: chrono::Duration,
-    ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-        Ok(*timestamp - duration)
-    }
-
-    async fn duration_between(
-        &self,
-        from: &chrono::DateTime<chrono::Utc>,
-        to: &chrono::DateTime<chrono::Utc>,
-    ) -> Result<chrono::Duration, Self::Error> {
-        Ok(*to - *from)
-    }
-}
+// MockTimestampService removed - using centralized testing_mocks::MockTimestampService
+// Re-export for compatibility
+pub use testing_mocks::MockTimestampService;
 
 pub struct MockTaskManagementService;
 

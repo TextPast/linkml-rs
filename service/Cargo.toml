@@ -182,6 +182,7 @@ tempfile = "3.8"
 futures = "0.3"
 insta = "1.34"
 once_cell = "1.19"
+testing-mocks = { workspace = true }
 tokio-test = "0.4"
 rand = "0.8"  # For test RngCore implementation
 
