@@ -136,7 +136,7 @@ indicatif = "0.17"
 rustyline = "14.0"
 linkml_core = { workspace = true }
 rootreal-hub-api-web-rest-core = { workspace = true }
-rootreal-hub-web-frontend-framework-frontend = { workspace = true }
+rootreal-hub-web-frontend = { workspace = true }
 shutdown_core = { workspace = true }
 logger_core = { workspace = true }
 logger_service = { workspace = true }

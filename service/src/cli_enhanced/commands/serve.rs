@@ -15,20 +15,13 @@ use axum::{
     response::Json,
     routing::{get, post},
 };
-// Temporarily comment out to fix compilation - missing dependency
-// use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
+use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
 use linkml_core::{
     error::{LinkMLError, Result},
     types::SchemaDefinition,
 };
-// Temporarily comment out to fix compilation
-// use restful_api_service::{
-//     factory_v3::{ServiceDependencies, create_restful_api_service_from_deps},
-//     app_v3::create_app_v3,
-// };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-// use shutdown_service::{ShutdownServiceDependencies, create_graceful_shutdown_service};
 use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 use tracing::{info, warn};
 

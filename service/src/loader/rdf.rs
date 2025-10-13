@@ -1430,8 +1430,8 @@ pub mod rdf_star {
         store
             .quads_for_pattern(
                 Some(subject.into()),
-                Some(rdf_type.into()),
-                Some(rdf_statement.into()),
+                Some(rdf_type.as_ref()),
+                Some(rdf_statement.as_ref().into()),
                 None,
             )
             .next()
