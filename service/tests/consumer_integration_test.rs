@@ -9,7 +9,7 @@ use linkml_core::traits::{LinkMLService, LinkMLServiceExt};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
-use testing_mocks::MockTimestampService;
+use testing_mocks::{MockLoggerService, MockTimestampService};
 
 // RootReal service dependencies
 use logger_core::traits::LoggerService;
@@ -319,55 +319,10 @@ impl LinkMLServiceExt for MockLinkMLService {
 
 // Mock implementations for testing
 mod test_mocks {
+    use super::*;
 
     // Mock logger for testing
-    pub struct MockLogger;
-
-    #[async_trait]
-    impl LoggerService for MockLogger {
-        type Error = logger_core::error::LoggerError;
-
-        async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-
-        async fn info(&self, _message: &str) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-
-        async fn warn(&self, _message: &str) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-
-        async fn error(&self, _message: &str) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-
-        async fn log(
-            &self,
-            _level: logger_core::LogLevel,
-            _message: &str,
-        ) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-
-        async fn log_entry(
-            &self,
-            _entry: &logger_core::LogEntry,
-        ) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-    
-    async fn set_level(&self, _level: LogLevel) -> Result<(), Self::Error> {
-        Ok(())
-    }
-    async fn flush(&self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-    async fn shutdown(&self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-}
+    pub type MockLogger = MockLoggerService;
 
 
 
