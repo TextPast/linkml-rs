@@ -286,107 +286,28 @@ impl ErrorHandlingService for MockErrorHandlerService {
     }
 }
 
-pub struct MockConfigurationService {
-    config: HashMap<String, String>,
-}
+/// Mock configuration service for LinkML testing
+///
+/// Re-exported from centralized testing-mocks crate.
+/// For LinkML-specific configuration, use the helper function below.
+pub use testing_mocks::MockConfigurationService;
 
-impl MockConfigurationService {
-    pub fn new() -> Self {
-        let mut config = HashMap::new();
-        config.insert("linkml.cache_enabled".to_string(), "true".to_string());
-        config.insert("linkml.cache_size".to_string(), "1000".to_string());
-        config.insert("linkml.validation_timeout".to_string(), "30".to_string());
-        config.insert("linkml.max_validation_depth".to_string(), "10".to_string());
-        config.insert("linkml.parallel_validation".to_string(), "true".to_string());
+/// Create a MockConfigurationService with LinkML-specific default configuration
+///
+/// This helper function creates a mock configuration service pre-populated with
+/// LinkML-specific configuration values that were previously hardcoded.
+#[allow(dead_code)]
+pub async fn create_linkml_mock_config() -> MockConfigurationService {
+    let mock = MockConfigurationService::new();
 
-        Self { config }
-    }
+    // Pre-populate with LinkML-specific configuration values
+    let _ = mock.set_config("linkml.cache_enabled".to_string(), true).await;
+    let _ = mock.set_config("linkml.cache_size".to_string(), 1000).await;
+    let _ = mock.set_config("linkml.validation_timeout".to_string(), 30).await;
+    let _ = mock.set_config("linkml.max_validation_depth".to_string(), 10).await;
+    let _ = mock.set_config("linkml.parallel_validation".to_string(), true).await;
 
-    pub fn set(&self, key: &str, value: &str) {
-        // Since config is not mutable, this is a no-op for the mock
-        // In a real implementation, you'd need Arc<RwLock<HashMap>> or similar
-        let _ = (key, value);
-    }
-
-    pub fn get(&self, key: &str) -> Option<String> {
-        self.config.get(key).cloned()
-    }
-}
-
-#[async_trait]
-impl ConfigurationService for MockConfigurationService {
-    type Error = ConfigurationError;
-
-    async fn load_configuration<T>(&self) -> Result<T, Self::Error>
-    where
-        T: for<'de> serde::Deserialize<'de>
-            + configuration_core::Validate
-            + Clone
-            + Send
-            + Sync
-            + 'static,
-    {
-        Err(ConfigurationError::LoadingError {
-            message: "Mock load not implemented".to_string(),
-        })
-    }
-
-    async fn load_configuration_from_source<T>(&self, _source: &str) -> Result<T, Self::Error>
-    where
-        T: for<'de> serde::Deserialize<'de>
-            + configuration_core::Validate
-            + Clone
-            + Send
-            + Sync
-            + 'static,
-    {
-        Err(ConfigurationError::LoadingError {
-            message: "Mock load not implemented".to_string(),
-        })
-    }
-
-    async fn get_configuration<T>(&self, key: &str) -> Result<T, Self::Error>
-    where
-        T: for<'de> serde::Deserialize<'de> + serde::Serialize + Clone + Send + Sync + 'static,
-    {
-        let value = self
-            .config
-            .get(key)
-            .ok_or_else(|| ConfigurationError::ValidationError {
-                message: format!("Key not found: {}", key),
-            })?;
-        serde_json::from_str(value).map_err(|_| ConfigurationError::ParsingError {
-            message: "Mock parse error".to_string(),
-        })
-    }
-
-    async fn reload_configuration(&self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-
-    async fn validate_configuration(&self, _source: &str) -> Result<(), Self::Error> {
-        Ok(())
-    }
-
-    async fn set_configuration<T>(&self, _key: &str, _value: &T) -> Result<(), Self::Error>
-    where
-        T: serde::Serialize + configuration_core::Validate + Clone + Send + Sync + 'static,
-    {
-        Ok(())
-    }
-
-    async fn delete_configuration(&self, _key: &str) -> Result<bool, Self::Error> {
-        Ok(true)
-    }
-
-    async fn get_configuration_metadata(
-        &self,
-        _source: &str,
-    ) -> Result<configuration_core::ConfigurationMetadata, Self::Error> {
-        Err(ConfigurationError::SourceError {
-            message: "Mock metadata not available".to_string(),
-        })
-    }
+    mock
 }
 
 pub struct MockCacheService {
