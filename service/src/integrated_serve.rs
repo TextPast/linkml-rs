@@ -294,6 +294,12 @@ pub struct LinkMLShutdownHook {
     /// Path to the schema being served
     schema_path: String,
     /// Validator instance for cleanup
+    ///
+    /// Currently unused but reserved for future implementation of:
+    /// - Flushing validation caches
+    /// - Waiting for in-flight validations
+    /// - Releasing validation resources
+    #[allow(dead_code)] // Reserved for future cleanup implementation
     validator: Arc<ValidationEngine>,
     /// Priority for shutdown ordering
     priority: ShutdownPriority,
@@ -327,6 +333,11 @@ impl LinkMLShutdownHook {
     }
 
     /// Perform cleanup operations
+    ///
+    /// Currently performs synchronous cleanup, but async signature is maintained for:
+    /// - Future async cleanup operations (cache flushing, waiting for in-flight validations)
+    /// - Consistency with ShutdownHook trait's async interface
+    #[allow(clippy::unused_async)] // Async signature required for future cleanup operations
     async fn cleanup(&self) -> Result<()> {
         tracing::info!(
             "LinkML shutdown hook '{}' starting cleanup for schema: {}",
