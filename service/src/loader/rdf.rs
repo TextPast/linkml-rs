@@ -1411,6 +1411,8 @@ impl DataDumper for RdfDumper {
 /// 2. Convert between reified and quoted triple representations
 /// 3. Maintain backward compatibility with existing reified data
 pub mod rdf_star {
+    // Allow wildcard import from parent module - this is a common pattern for submodules
+    #[allow(clippy::wildcard_imports)]
     use super::*;
 
     /// Check if a subject represents a reified statement
