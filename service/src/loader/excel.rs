@@ -557,12 +557,13 @@ pub fn wire_excel_loader_with_options(
 
 #[cfg(test)]
 mod tests {
+    use testing_mocks::MockTimestampService;
     use super::*;
 
     #[test]
     fn test_sanitize_name() {
         let logger = Arc::new(MockLogger);
-        let timestamp = Arc::new(MockTimestamp);
+        let timestamp = Arc::new(MockTimestampService::new());
         let loader = ExcelLoader::new(logger, timestamp);
 
         assert_eq!(loader.sanitize_name("Employee Data"), "Employee_Data");
@@ -614,72 +615,3 @@ mod tests {
         }
     }
 
-    struct MockTimestamp;
-    #[async_trait]
-    impl TimestampService for MockTimestamp {
-        type Error = TimestampError;
-
-        async fn now_utc(&self) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            Ok(chrono::Utc::now())
-        }
-        async fn now_local(
-            &self,
-        ) -> std::result::Result<chrono::DateTime<chrono::Local>, Self::Error> {
-            Ok(chrono::Local::now())
-        }
-        async fn system_time(&self) -> std::result::Result<std::time::SystemTime, Self::Error> {
-            Ok(std::time::SystemTime::now())
-        }
-        async fn parse_iso8601(
-            &self,
-            timestamp: &str,
-        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            use chrono::DateTime;
-            Ok(DateTime::parse_from_rfc3339(timestamp)
-                .map_err(|e| TimestampError::ParseError {
-                    message: e.to_string().into(),
-                })?
-                .with_timezone(&chrono::Utc))
-        }
-        async fn format_iso8601(
-            &self,
-            timestamp: &chrono::DateTime<chrono::Utc>,
-        ) -> std::result::Result<String, Self::Error> {
-            Ok(timestamp.to_rfc3339())
-        }
-        async fn duration_since(
-            &self,
-            timestamp: &chrono::DateTime<chrono::Utc>,
-        ) -> std::result::Result<chrono::Duration, Self::Error> {
-            Ok(chrono::Utc::now() - *timestamp)
-        }
-        async fn add_duration(
-            &self,
-            timestamp: &chrono::DateTime<chrono::Utc>,
-            duration: chrono::Duration,
-        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            Ok(*timestamp + duration)
-        }
-        async fn subtract_duration(
-            &self,
-            timestamp: &chrono::DateTime<chrono::Utc>,
-            duration: chrono::Duration,
-        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            Ok(*timestamp - duration)
-        }
-        async fn duration_between(
-            &self,
-            from: &chrono::DateTime<chrono::Utc>,
-            to: &chrono::DateTime<chrono::Utc>,
-        ) -> std::result::Result<chrono::Duration, Self::Error> {
-            Ok(*to - *from)
-        }
-        async fn unix_timestamp_to_datetime(
-            &self,
-            timestamp: i64,
-        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-            use chrono::TimeZone;
-            Ok(chrono::Utc.timestamp_opt(timestamp, 0).unwrap())
-        }
-    }
-}

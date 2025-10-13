@@ -457,6 +457,7 @@ impl TtlMaintenanceWorker {
 
 #[cfg(test)]
 mod tests {
+    use testing_mocks::MockTimestampService;
     use super::*;
 
     #[test]
@@ -486,93 +487,3 @@ mod tests {
     #[test]
     fn test_ttl_rules() {
         // Create a mock timestamp service
-        struct MockTimestampService;
-
-        #[async_trait::async_trait]
-        impl TimestampService for MockTimestampService {
-            type Error = TimestampError;
-
-            async fn now_utc(&self) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-                Ok(chrono::Utc::now())
-            }
-
-            async fn now_local(&self) -> Result<chrono::DateTime<chrono::Local>, Self::Error> {
-                Ok(chrono::Local::now())
-            }
-
-            async fn system_time(&self) -> Result<std::time::SystemTime, Self::Error> {
-                Ok(std::time::SystemTime::now())
-            }
-
-            async fn parse_iso8601(
-                &self,
-                timestamp: &str,
-            ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-                timestamp
-                    .parse()
-                    .map_err(|e| TimestampError::parse_error(format!("Parse error: {e}")))
-            }
-
-            async fn format_iso8601(
-                &self,
-                timestamp: &chrono::DateTime<chrono::Utc>,
-            ) -> Result<String, Self::Error> {
-                Ok(timestamp.to_rfc3339())
-            }
-
-            async fn duration_since(
-                &self,
-                earlier: &chrono::DateTime<chrono::Utc>,
-            ) -> Result<chrono::TimeDelta, Self::Error> {
-                Ok(chrono::Utc::now() - *earlier)
-            }
-
-            async fn unix_timestamp_to_datetime(
-                &self,
-                seconds: i64,
-            ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-                chrono::DateTime::from_timestamp(seconds, 0).ok_or_else(|| {
-                    TimestampError::parse_error("Invalid Unix timestamp".to_string())
-                })
-            }
-
-            async fn add_duration(
-                &self,
-                timestamp: &chrono::DateTime<chrono::Utc>,
-                duration: chrono::TimeDelta,
-            ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-                Ok(*timestamp + duration)
-            }
-
-            async fn subtract_duration(
-                &self,
-                timestamp: &chrono::DateTime<chrono::Utc>,
-                duration: chrono::TimeDelta,
-            ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
-                Ok(*timestamp - duration)
-            }
-
-            async fn duration_between(
-                &self,
-                from: &chrono::DateTime<chrono::Utc>,
-                to: &chrono::DateTime<chrono::Utc>,
-            ) -> Result<chrono::TimeDelta, Self::Error> {
-                Ok(*to - *from)
-            }
-        }
-
-        let timestamp_service = Arc::new(MockTimestampService);
-        let manager = TtlManager::new(TtlConfig::default(), timestamp_service);
-
-        // Add a rule for schema patterns
-        manager.add_rule(TtlRule {
-            pattern: "schema:".to_string(),
-            ttl_override: Some(Duration::from_secs(7200)),
-            ttl_multiplier: None,
-            priority: 10,
-        });
-
-        let ttl = manager.set_ttl("linkml:schema:test".to_string(), 1);
-        assert_eq!(ttl, Duration::from_secs(7200));
-    }
-}
