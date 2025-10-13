@@ -119,105 +119,62 @@ impl LinkMLRouterFactory {
         &self.validator
     }
 }
-// Complete LinkML service integration with all 17 RootReal services
-//
-// This struct represents the REAL integration where LinkML is a component
-// of the larger RootReal system, not a standalone service.
-// Temporarily commented out until proper types are available
-// pub struct IntegratedLinkMLService {
-//     router_factory: LinkMLRouterFactory,
-//     rest_api_app: Arc<RestApiAppBuilder>,
-//     cors_config: CorsConfig,
-//     shutdown_service: Arc<dyn ShutdownService>,
-// }
+/// Creates a LinkML router that can be nested into the REST API service.
+///
+/// This function provides the CORRECT way to integrate LinkML with RootReal's REST API:
+/// The LinkML service does NOT create its own HTTP server. Instead, it provides a router
+/// that can be nested into the main REST API router using `.nest("/linkml", linkml_routes())`.
+///
+/// # Integration Pattern
+///
+/// This follows the same pattern as other REST API route modules (auth_v3, cache_v3, etc.):
+/// 1. Create a router with LinkML-specific routes
+/// 2. The router uses its own AppState (schema, validator, schema_path)
+/// 3. The router is nested into the main REST API router
+/// 4. CORS is handled by the main REST API service
+///
+/// # Example Usage in REST API Service
+///
+/// ```rust,ignore
+/// use linkml_service::integrated_serve::create_linkml_routes;
+///
+/// // In app_v3.rs or similar:
+/// let linkml_router = create_linkml_routes(schema_path)?;
+/// let main_router = Router::new()
+///     .nest("/linkml", linkml_router)
+///     .nest("/auth", auth_routes())
+///     .nest("/cache", cache_routes());
+/// ```
+///
+/// # Arguments
+///
+/// * `schema_path` - Path to the LinkML schema file (YAML or JSON)
+///
+/// # Returns
+///
+/// A configured [`Router`] with LinkML endpoints:
+/// - `GET /schema` - Retrieve the loaded schema definition
+/// - `POST /validate` - Validate data against the schema
+/// - `GET /health` - Health check with schema information
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Schema file cannot be read
+/// - Schema parsing fails (invalid YAML/JSON)
+/// - Validation engine initialization fails
+///
+/// # Architecture Notes
+///
+/// This implementation replaces the previous commented-out `IntegratedLinkMLService`
+/// which expected a non-existent `RestApiAppBuilder` type. The current REST API
+/// service uses `create_app_v3()` which returns a Router directly, not a builder.
+/// This function matches that architecture by returning a Router that can be nested.
+pub fn create_linkml_routes(schema_path: PathBuf) -> Result<Router> {
+    let factory = LinkMLRouterFactory::new(schema_path)?;
+    Ok(factory.create_router())
+}
 
-// impl IntegratedLinkMLService {
-//     /// Create a fully integrated LinkML service
-//     ///
-//     /// This function demonstrates the CORRECT way to integrate LinkML:
-//     /// 1. Use existing RootReal services
-//     /// 2. Register handlers with REST API service
-//     /// 3. Use frontend-framework for CORS
-//     /// 4. Use shutdown service for termination
-//     pub async fn new(
-//         schema_path: PathBuf,
-//         rest_api_deps: RestApiDeps,
-//         shutdown_service: Arc<dyn ShutdownService>,
-//     ) -> Result<Self> {
-//         // Create router factory for LinkML
-//         let router_factory = LinkMLRouterFactory::new(schema_path)?;
-//
-//         // Create REST API app builder
-//         let rest_api_app = RestApiAppBuilder::new(rest_api_deps)
-//             .await
-//             .map_err(|e| LinkMLError::service(format!("Failed to create REST API app: {}", e)))?;
-//
-//         // Configure CORS using frontend-framework service
-//         let cors_config = CorsConfig::production()
-//             .with_origins(&["https://app.rootreal.com"])
-//             .with_max_age(7200)
-//             .with_credentials(true);
-//
-//         // Register shutdown hook
-//         router_factory.register_shutdown_hook(shutdown_service.clone())?;
-//
-//         Ok(Self {
-//             router_factory,
-//             rest_api_app: Arc::new(rest_api_app),
-//             cors_config,
-//             shutdown_service,
-//         })
-//     }
-//
-//     /// Mount LinkML routes on the REST API service
-//     ///
-//     /// This is how LinkML provides its functionality - as routes registered
-//     /// with the REST API service, not as its own server.
-//     pub async fn mount_routes(&self, prefix: &str) -> Result<()> {
-//         let linkml_router = self.router_factory.create_router();
-//
-//         // Apply CORS layer from frontend-framework
-//         let cors_layer =
-//             // frontend_framework_service::cors::create_cors_layer(self.cors_config.clone())
-//             // Placeholder until CORS is properly integrated
-//             tower_http::cors::CorsLayer::permissive()
-//                 .map_err(|e| LinkMLError::service(format!("Failed to create CORS layer: {}", e)))?;
-//
-//         let router_with_cors = linkml_router.layer(cors_layer);
-//
-//         // Register with REST API service
-//         self.rest_api_app
-//             .mount(prefix, router_with_cors)
-//             .await
-//             .map_err(|e| LinkMLError::service(format!("Failed to mount routes: {}", e)))?;
-//
-//         tracing::info!("LinkML routes mounted at {}", prefix);
-//         Ok(())
-//     }
-//
-//     /// Start the integrated service
-//     ///
-//     /// This does NOT start a LinkML server - it starts the REST API service
-//     /// which has LinkML registered as one of its route handlers.
-//     pub async fn start(self, addr: std::net::SocketAddr) -> Result<()> {
-//         tracing::info!(
-//             "Starting integrated REST API service with LinkML at {}",
-//             addr
-//         );
-//
-//         // Get shutdown signal from shutdown service
-//         let shutdown_signal = self.shutdown_service.get_shutdown_signal();
-//
-//         // Start the REST API service (which includes LinkML routes)
-//         self.rest_api_app
-//             .serve(addr, shutdown_signal)
-//             .await
-//             .map_err(|e| LinkMLError::service(format!("REST API service error: {}", e)))?;
-//
-//         tracing::info!("Integrated service shutdown complete");
-//         Ok(())
-//     }
-// }
 /// Handler implementations that work with the integrated service
 mod handlers {
     use super::{AppState, SchemaDefinition};
