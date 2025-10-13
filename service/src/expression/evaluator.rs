@@ -1,6 +1,14 @@
-//! Expression evaluator for `LinkML` expressions
-
-#![allow(missing_docs)]
+//! Expression evaluator for LinkML expressions.
+//!
+//! This module provides a safe, sandboxed evaluator for LinkML expressions with:
+//! - Configurable resource limits (iterations, call depth, timeout, memory)
+//! - Expression result caching for performance
+//! - Function registry for extensible operations
+//! - Context-based variable resolution
+//! - Comprehensive error handling
+//!
+//! The evaluator is designed to safely execute user-provided expressions
+//! within RootReal's LinkML schema validation and transformation pipeline.
 
 use super::ast::Expression;
 use super::error::EvaluationError;

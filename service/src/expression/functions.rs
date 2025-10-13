@@ -1,6 +1,15 @@
-//! Built-in functions for the `LinkML` expression language
-
-#![allow(missing_docs)]
+//! Built-in functions for the LinkML expression language.
+//!
+//! This module provides a comprehensive set of built-in functions for LinkML
+//! expressions, organized into categories:
+//! - **String functions**: length, substring, concat, split, etc.
+//! - **Math functions**: abs, ceil, floor, round, min, max, etc.
+//! - **Array functions**: map, filter, reduce, sort, etc.
+//! - **Type functions**: type checking and conversion
+//! - **Logical functions**: and, or, not, if-then-else
+//!
+//! Functions are registered in a `FunctionRegistry` and can be extended
+//! with custom functions for domain-specific operations.
 
 use serde_json::Value;
 use std::collections::HashMap;
@@ -9,6 +18,7 @@ use std::fmt;
 /// Error type for function calls
 #[derive(Debug)]
 pub struct FunctionError {
+    /// Error message describing what went wrong
     pub message: String,
 }
 
@@ -21,12 +31,14 @@ impl fmt::Display for FunctionError {
 impl std::error::Error for FunctionError {}
 
 impl FunctionError {
+    /// Creates a new function error with the specified message
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
         }
     }
 
+    /// Creates an error for incorrect number of arguments
     #[must_use]
     pub fn wrong_arity(name: &str, expected: &str, actual: usize) -> Self {
         Self {
@@ -34,6 +46,7 @@ impl FunctionError {
         }
     }
 
+    /// Creates an error for invalid function argument
     pub fn invalid_argument(name: &str, message: impl Into<String>) -> Self {
         Self {
             message: format!(
@@ -44,6 +57,7 @@ impl FunctionError {
         }
     }
 
+    /// Creates an error for invalid function result
     pub fn invalid_result(name: &str, message: impl Into<String>) -> Self {
         Self {
             message: format!(

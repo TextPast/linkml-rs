@@ -410,20 +410,21 @@ impl RdfLoader {
         }
     }
 
-    /// Convert term to string (reserved for future RDF-star support)
+    /// Convert term to string
+    ///
+    /// Note: RDF-star Triple terms are not yet supported in oxigraph 0.5.x.
+    /// When oxigraph adds native RDF-star support, this function will be extended
+    /// to handle quoted triples. For now, RDF-star data should be represented
+    /// using standard RDF reification patterns.
     fn _term_to_string(term: &Term) -> String {
         match term {
             Term::NamedNode(n) => n.as_str().to_string(),
             Term::BlankNode(b) => format!("_:{}", b.as_str()),
             Term::Literal(l) => l.value().to_string(),
-            // TODO: Handle RDF-star Triple terms when oxigraph updates API
-            // Term::Triple(triple) => {
-            //     // RDF-star support: convert triple to reified statement representation
-            //     let subj = self._term_to_string(&triple.subject.clone().into());
-            //     let pred = triple.predicate.as_str();
-            //     let obj = self._term_to_string(&triple.object.clone());
-            //     format!("<<{subj} {pred} {obj}>>")
-            // }
+            // RDF-star support will be added when oxigraph exposes Term::Triple variant
+            // For now, use standard RDF reification:
+            // - rdf:Statement for the reified triple
+            // - rdf:subject, rdf:predicate, rdf:object for the triple components
         }
     }
 
@@ -486,27 +487,28 @@ impl RdfLoader {
                     },
                     _ => Ok(JsonValue::String(value.to_string())),
                 }
-            } // TODO: Handle RDF-star Triple terms when oxigraph updates API
-              // Term::Triple(triple) => {
-              //     // RDF-star support: convert triple to a nested JSON object representation
-              //     let subj_term: Term = triple.subject.clone().into();
-              //     let obj_term = triple.object.clone();
-              //     let subj_value = self.term_to_json(&subj_term)?;
-              //     let pred_name = self.predicate_to_property(&triple.predicate);
-              //     let obj_value = self.term_to_json(&obj_term)?;
-              //
-              //     // Represent as a reified statement object
-              //     let mut triple_obj = serde_json::Map::new();
-              //     triple_obj.insert(
-              //         "@type".to_string(),
-              //         JsonValue::String("rdf:Statement".to_string()),
-              //     );
-              //     triple_obj.insert("rdf:subject".to_string(), subj_value);
-              //     triple_obj.insert("rdf:predicate".to_string(), JsonValue::String(pred_name));
-              //     triple_obj.insert("rdf:object".to_string(), obj_value);
-              //
-              //     Ok(JsonValue::Object(triple_obj))
-              // }
+            }
+            // RDF-star support: When oxigraph adds Term::Triple variant, uncomment and implement:
+            // Term::Triple(triple) => {
+            //     // Convert quoted triple to a nested JSON object representation
+            //     let subj_term: Term = triple.subject.clone().into();
+            //     let obj_term = triple.object.clone();
+            //     let subj_value = Self::term_to_json(&subj_term)?;
+            //     let pred_name = triple.predicate.as_str();
+            //     let obj_value = Self::term_to_json(&obj_term)?;
+            //
+            //     // Represent as a reified statement object
+            //     let mut triple_obj = serde_json::Map::new();
+            //     triple_obj.insert(
+            //         "@type".to_string(),
+            //         JsonValue::String("rdf:Statement".to_string()),
+            //     );
+            //     triple_obj.insert("rdf:subject".to_string(), subj_value);
+            //     triple_obj.insert("rdf:predicate".to_string(), JsonValue::String(pred_name.to_string()));
+            //     triple_obj.insert("rdf:object".to_string(), obj_value);
+            //
+            //     Ok(JsonValue::Object(triple_obj))
+            // }
         }
     }
 
@@ -1381,6 +1383,156 @@ impl DataDumper for RdfDumper {
     }
 }
 
+/// RDF-star reification support
+///
+/// This module provides utilities for working with RDF-star quoted triples
+/// using standard RDF reification patterns until oxigraph adds native support.
+///
+/// # RDF-star Representation
+///
+/// When oxigraph 0.5.x doesn't support `Term::Triple`, we use standard RDF reification:
+///
+/// ```turtle
+/// # Original RDF-star quoted triple:
+/// # << :alice :knows :bob >> :certainty 0.9 .
+///
+/// # Reified representation:
+/// _:stmt1 a rdf:Statement ;
+///     rdf:subject :alice ;
+///     rdf:predicate :knows ;
+///     rdf:object :bob ;
+///     :certainty 0.9 .
+/// ```
+///
+/// # Future Migration
+///
+/// When oxigraph adds `Term::Triple` support, this module will be updated to:
+/// 1. Detect and parse RDF-star syntax directly
+/// 2. Convert between reified and quoted triple representations
+/// 3. Maintain backward compatibility with existing reified data
+pub mod rdf_star {
+    use super::*;
+
+    /// Check if a subject represents a reified statement
+    ///
+    /// Returns true if the subject has rdf:type rdf:Statement
+    pub fn is_reified_statement(
+        store: &Store,
+        subject: &NamedOrBlankNode,
+    ) -> bool {
+        let rdf_type = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        );
+        let rdf_statement = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement"
+        );
+
+        store
+            .quads_for_pattern(
+                Some(subject.into()),
+                Some(&rdf_type),
+                Some(&rdf_statement.into()),
+                None,
+            )
+            .next()
+            .is_some()
+    }
+
+    /// Extract reified triple components
+    ///
+    /// Returns (subject, predicate, object) if the node represents a valid reified statement
+    pub fn extract_reified_triple(
+        store: &Store,
+        statement_node: &NamedOrBlankNode,
+    ) -> Option<(Term, NamedNode, Term)> {
+        let rdf_subject = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject"
+        );
+        let rdf_predicate = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate"
+        );
+        let rdf_object = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#object"
+        );
+
+        // Get subject
+        let subj = store
+            .quads_for_pattern(
+                Some(statement_node.into()),
+                Some(&rdf_subject),
+                None,
+                None,
+            )
+            .next()?
+            .object
+            .clone();
+
+        // Get predicate
+        let pred = store
+            .quads_for_pattern(
+                Some(statement_node.into()),
+                Some(&rdf_predicate),
+                None,
+                None,
+            )
+            .next()?
+            .object
+            .clone();
+
+        let pred = match pred {
+            Term::NamedNode(n) => n,
+            _ => return None,
+        };
+
+        // Get object
+        let obj = store
+            .quads_for_pattern(
+                Some(statement_node.into()),
+                Some(&rdf_object),
+                None,
+                None,
+            )
+            .next()?
+            .object
+            .clone();
+
+        Some((subj, pred, obj))
+    }
+
+    /// Convert reified statement to JSON representation
+    ///
+    /// This creates a JSON object representing the quoted triple
+    pub fn reified_to_json(
+        subj: &Term,
+        pred: &NamedNode,
+        obj: &Term,
+    ) -> LoaderResult<JsonValue> {
+        let mut triple_obj = serde_json::Map::new();
+
+        triple_obj.insert(
+            "@type".to_string(),
+            JsonValue::String("rdf:Statement".to_string()),
+        );
+
+        triple_obj.insert(
+            "rdf:subject".to_string(),
+            RdfLoader::term_to_json(subj)?,
+        );
+
+        triple_obj.insert(
+            "rdf:predicate".to_string(),
+            JsonValue::String(pred.as_str().to_string()),
+        );
+
+        triple_obj.insert(
+            "rdf:object".to_string(),
+            RdfLoader::term_to_json(obj)?,
+        );
+
+        Ok(JsonValue::Object(triple_obj))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1508,6 +1660,100 @@ ex:bob rdf:type ex:Person ;
         // N-Triples should have one triple per line
         let lines: Vec<&str> = output.trim().lines().collect();
         assert!(lines.len() >= 2); // At least type and name triples
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_rdf_star_reification() -> anyhow::Result<()> {
+        use super::rdf_star::*;
+
+        // Create a store with a reified statement
+        let store = Store::new().expect("should create store: {}");
+
+        // Create the reified statement
+        let stmt = BlankNode::default();
+        let rdf_type = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        );
+        let rdf_statement = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement"
+        );
+        let rdf_subject = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject"
+        );
+        let rdf_predicate = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate"
+        );
+        let rdf_object = NamedNode::new_unchecked(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#object"
+        );
+
+        let alice = NamedNode::new_unchecked("http://example.org/alice");
+        let knows = NamedNode::new_unchecked("http://example.org/knows");
+        let bob = NamedNode::new_unchecked("http://example.org/bob");
+
+        // Add reification triples
+        store.insert(&Quad::new(
+            stmt.clone(),
+            rdf_type.clone(),
+            rdf_statement.clone(),
+            GraphName::DefaultGraph,
+        )).expect("should insert quad: {}");
+
+        store.insert(&Quad::new(
+            stmt.clone(),
+            rdf_subject.clone(),
+            alice.clone(),
+            GraphName::DefaultGraph,
+        )).expect("should insert quad: {}");
+
+        store.insert(&Quad::new(
+            stmt.clone(),
+            rdf_predicate.clone(),
+            knows.clone(),
+            GraphName::DefaultGraph,
+        )).expect("should insert quad: {}");
+
+        store.insert(&Quad::new(
+            stmt.clone(),
+            rdf_object.clone(),
+            bob.clone(),
+            GraphName::DefaultGraph,
+        )).expect("should insert quad: {}");
+
+        // Test detection
+        let stmt_node = NamedOrBlankNode::from(stmt.clone());
+        assert!(is_reified_statement(&store, &stmt_node));
+
+        // Test extraction
+        let triple = extract_reified_triple(&store, &stmt_node)
+            .ok_or_else(|| anyhow::anyhow!("should extract reified triple"))?;
+
+        assert_eq!(triple.0, Term::NamedNode(alice));
+        assert_eq!(triple.1, knows);
+        assert_eq!(triple.2, Term::NamedNode(bob));
+
+        // Test JSON conversion
+        let json = reified_to_json(&triple.0, &triple.1, &triple.2)
+            .expect("should convert to JSON: {}");
+
+        assert_eq!(
+            json.get("@type"),
+            Some(&JsonValue::String("rdf:Statement".to_string()))
+        );
+        assert_eq!(
+            json.get("rdf:subject"),
+            Some(&JsonValue::String("http://example.org/alice".to_string()))
+        );
+        assert_eq!(
+            json.get("rdf:predicate"),
+            Some(&JsonValue::String("http://example.org/knows".to_string()))
+        );
+        assert_eq!(
+            json.get("rdf:object"),
+            Some(&JsonValue::String("http://example.org/bob".to_string()))
+        );
+
         Ok(())
     }
 }

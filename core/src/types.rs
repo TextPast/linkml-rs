@@ -550,9 +550,11 @@ pub struct SlotDefinition {
 /// Structured pattern for advanced pattern matching
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct StructuredPattern {
+    /// Pattern syntax (e.g., "regex", "glob")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub syntax: Option<String>,
 
+    /// Pattern expression
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
 
@@ -659,6 +661,7 @@ pub enum PermissibleValue {
     Simple(String),
     /// Complex value with metadata
     Complex {
+        /// Value text
         text: String,
         /// Description
         #[serde(skip_serializing_if = "Option::is_none")]

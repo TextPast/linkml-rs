@@ -15,8 +15,7 @@ use axum::{
     response::Json,
     routing::{get, post},
 };
-// Temporarily comment out to fix compilation
-// use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
+use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
 use linkml_core::{
     error::{LinkMLError, Result},
     types::SchemaDefinition,
@@ -253,17 +252,20 @@ impl ServeCommand {
         // Create LinkML-specific router with proper RootReal patterns
         let linkml_router = create_linkml_router(linkml_state);
 
-        // TODO: Use frontend-framework CORS service when available
-        // let cors_config = if self.is_development_mode() {
-        //     CorsConfig::development()
-        // } else {
-        //     CorsConfig::production()
-        //         .with_origins(&[&format!("http://{}:{}", self.host, self.port)])
-        //         .with_credentials(false)
-        // };
+        // Use frontend-framework CORS service with proper configuration
+        let cors_config = if self.is_development_mode() {
+            // Development mode: permissive CORS for local testing
+            CorsConfig::development()
+        } else {
+            // Production mode: strict CORS with explicit origins
+            CorsConfig::production()
+                .with_origins(&[&format!("http://{}:{}", self.host, self.port)])
+                .with_credentials(false)
+        };
 
-        // Use tower_http CORS as temporary fallback
-        let cors_layer = tower_http::cors::CorsLayer::permissive();
+        let cors_layer = create_cors_layer(cors_config).map_err(|e| {
+            LinkMLError::config(format!("Failed to create CORS layer: {e}"))
+        })?;
 
         let app = linkml_router.layer(cors_layer);
 

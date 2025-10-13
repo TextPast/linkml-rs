@@ -158,12 +158,16 @@ pub struct CacheConfig {
     pub rule_cache: RuleCacheConfig,
 }
 
-/// Cache eviction policy
+/// Cache eviction policy for managing cache size
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum EvictionPolicy {
+    /// Least Recently Used - evict least recently accessed items
     Lru,
+    /// Least Frequently Used - evict least frequently accessed items
     Lfu,
+    /// First In First Out - evict oldest items
     Fifo,
+    /// Time To Live - evict items based on expiration time
     Ttl,
 }
 

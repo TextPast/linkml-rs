@@ -991,9 +991,36 @@ mod tests {
             }
 
             fn create_sync_rng(&self) -> Box<dyn random_core::SyncCryptoRng> {
-                // TODO: Fix trait bound issue with StdRng and SyncCryptoRng
-                // The issue is that rand's RngCore is different from random_core's expectations
-                unimplemented!("Stress test RNG implementation needs trait bound fixes")
+                // Simple deterministic RNG for stress testing
+                // This provides predictable values for reproducible test results
+                struct StressTestRng;
+
+                impl rand::RngCore for StressTestRng {
+                    fn next_u32(&mut self) -> u32 {
+                        42 // Deterministic value for testing
+                    }
+
+                    fn next_u64(&mut self) -> u64 {
+                        42 // Deterministic value for testing
+                    }
+
+                    fn fill_bytes(&mut self, dest: &mut [u8]) {
+                        // Fill with deterministic pattern
+                        dest.fill(42);
+                    }
+
+                    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+                        self.fill_bytes(dest);
+                        Ok(())
+                    }
+                }
+
+                // Mark as cryptographically secure for testing purposes
+                // Note: This is NOT actually cryptographically secure - it's deterministic
+                // This is acceptable for stress testing where we want reproducible results
+                impl rand::CryptoRng for StressTestRng {}
+
+                Box::new(StressTestRng)
             }
 
             // Range-Based Generation

@@ -1,6 +1,19 @@
-//! Expression parser for `LinkML` expression language
+//! Expression parser for LinkML expression language.
+//!
+//! This module implements a recursive descent parser for LinkML expressions,
+//! converting text expressions into an Abstract Syntax Tree (AST).
+//!
+//! The parser supports:
+//! - Literals (null, boolean, number, string)
+//! - Variables with `{name}` syntax
+//! - Arithmetic operators (+, -, *, /, %)
+//! - Comparison operators (==, !=, <, >, <=, >=)
+//! - Logical operators (and, or, not)
+//! - Function calls with arguments
+//! - Operator precedence and associativity
+//!
+//! The parser produces an AST that can be evaluated by the expression evaluator.
 
-#![allow(missing_docs)]
 #![allow(dead_code)]
 
 use super::ast::Expression;

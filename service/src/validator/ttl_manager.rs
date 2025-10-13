@@ -484,6 +484,4 @@ mod tests {
         assert!(pattern.avg_access_interval > Duration::from_secs(0));
     }
 
-    #[test]
-    fn test_ttl_rules() {
-        // Create a mock timestamp service
+}

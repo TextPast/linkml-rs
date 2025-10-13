@@ -17,7 +17,12 @@ pub enum Annotation {
     /// Simple string annotation
     Simple(String),
     /// Complex annotation with tag and value
-    Complex { tag: String, value: AnnotationValue },
+    Complex {
+        /// Annotation tag/key
+        tag: String,
+        /// Annotation value
+        value: AnnotationValue
+    },
 }
 
 /// Value types for annotations

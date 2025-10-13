@@ -212,37 +212,60 @@ pub struct SchemaMigration {
     pub steps: Vec<MigrationStep>,
 }
 
-/// Individual migration step
+/// Individual migration step for schema evolution
 #[derive(Debug, Clone)]
 pub enum MigrationStep {
-    /// Add a new field
+    /// Add a new field to a class
     AddField {
+        /// Class name to add field to
         class: String,
+        /// Field name to add
         field: String,
+        /// Optional default value for existing instances
         default: Option<Value>,
     },
-    /// Remove a field
-    RemoveField { class: String, field: String },
-    /// Rename a field
-    RenameField {
+    /// Remove a field from a class
+    RemoveField {
+        /// Class name to remove field from
         class: String,
+        /// Field name to remove
+        field: String
+    },
+    /// Rename a field in a class
+    RenameField {
+        /// Class name containing the field
+        class: String,
+        /// Current field name
         from: String,
+        /// New field name
         to: String,
     },
-    /// Change field type
+    /// Change the type of a field
     ChangeType {
+        /// Class name containing the field
         class: String,
+        /// Field name to change
         field: String,
+        /// Current type name
         from_type: String,
+        /// New type name
         to_type: String,
     },
-    /// Add a new class
-    AddClass { name: String },
-    /// Remove a class
-    RemoveClass { name: String },
-    /// Custom transformation
+    /// Add a new class to the schema
+    AddClass {
+        /// Name of the class to add
+        name: String
+    },
+    /// Remove a class from the schema
+    RemoveClass {
+        /// Name of the class to remove
+        name: String
+    },
+    /// Custom transformation with arbitrary logic
     Transform {
+        /// Human-readable description of the transformation
         description: String,
+        /// Transformation expression or code
         transform: String,
     },
 }
