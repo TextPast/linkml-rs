@@ -1459,7 +1459,7 @@ pub mod rdf_star {
         let subj = store
             .quads_for_pattern(
                 Some(statement_node.into()),
-                Some(rdf_subject.into()),
+                Some(rdf_subject.as_ref()),
                 None,
                 None,
             )
@@ -1472,7 +1472,7 @@ pub mod rdf_star {
         let pred = store
             .quads_for_pattern(
                 Some(statement_node.into()),
-                Some(rdf_predicate.into()),
+                Some(rdf_predicate.as_ref()),
                 None,
                 None,
             )
@@ -1490,7 +1490,7 @@ pub mod rdf_star {
         let obj = store
             .quads_for_pattern(
                 Some(statement_node.into()),
-                Some(rdf_object.into()),
+                Some(rdf_object.as_ref()),
                 None,
                 None,
             )
