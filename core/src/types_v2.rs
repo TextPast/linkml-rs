@@ -29,7 +29,7 @@ pub struct SchemaDefinitionV2 {
     pub default_prefix: Option<Arc<str>>,
     /// Default range for slots
     pub default_range: Option<Arc<str>>,
-    /// LinkML metamodel version
+    /// `LinkML` metamodel version
     pub metamodel_version: Option<Arc<str>>,
     /// Schema status (e.g., "draft", "stable")
     pub status: Option<Arc<str>>,
@@ -79,7 +79,7 @@ pub struct SchemaDefinitionV2 {
 
 /// Memory-optimized Class Definition
 ///
-/// Defines a class in the LinkML schema with string interning for memory efficiency.
+/// Defines a class in the `LinkML` schema with string interning for memory efficiency.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClassDefinitionV2 {
     /// Class name
@@ -139,7 +139,7 @@ pub struct ClassDefinitionV2 {
 
 /// Memory-optimized Slot Definition
 ///
-/// Defines a slot (property/attribute) in the LinkML schema with string interning.
+/// Defines a slot (property/attribute) in the `LinkML` schema with string interning.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SlotDefinitionV2 {
     /// Slot name
@@ -267,7 +267,7 @@ pub struct SlotDefinitionV2 {
 
 /// Memory-optimized Type Definition
 ///
-/// Defines a data type in the LinkML schema with string interning.
+/// Defines a data type in the `LinkML` schema with string interning.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeDefinitionV2 {
     /// Type name
@@ -301,7 +301,7 @@ pub struct TypeDefinitionV2 {
 
 /// Memory-optimized Enum Definition
 ///
-/// Defines an enumeration with permissible values in the LinkML schema.
+/// Defines an enumeration with permissible values in the `LinkML` schema.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnumDefinitionV2 {
     /// Enum name
@@ -360,7 +360,7 @@ pub struct SubsetDefinitionV2 {
 pub struct PrefixDefinitionV2 {
     /// Prefix string (e.g., "schema")
     pub prefix_prefix: Arc<str>,
-    /// Full URI reference (e.g., "http://schema.org/")
+    /// Full URI reference (e.g., "<http://schema.org>")
     pub prefix_reference: Arc<str>,
 }
 

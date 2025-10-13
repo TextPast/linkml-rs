@@ -15,7 +15,8 @@ use axum::{
     response::Json,
     routing::{get, post},
 };
-use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
+// Temporarily comment out to fix compilation - missing dependency
+// use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
 use linkml_core::{
     error::{LinkMLError, Result},
     types::SchemaDefinition,
