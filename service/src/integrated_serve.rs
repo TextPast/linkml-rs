@@ -359,10 +359,7 @@ impl LinkMLShutdownHook {
         // 4. Release schema resources
         // Arc will handle this automatically when the last reference is dropped
 
-        tracing::info!(
-            "LinkML shutdown hook '{}' completed cleanup",
-            self.name
-        );
+        tracing::info!("LinkML shutdown hook '{}' completed cleanup", self.name);
 
         Ok(())
     }
@@ -370,7 +367,9 @@ impl LinkMLShutdownHook {
 
 #[async_trait]
 impl ShutdownHook for LinkMLShutdownHook {
-    async fn on_shutdown(&self) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn on_shutdown(
+        &self,
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.cleanup()
             .await
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)

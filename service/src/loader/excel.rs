@@ -557,8 +557,8 @@ pub fn wire_excel_loader_with_options(
 
 #[cfg(test)]
 mod tests {
-    use testing_mocks::MockTimestampService;
     use super::*;
+    use testing_mocks::MockTimestampService;
 
     #[test]
     fn test_sanitize_name() {

@@ -257,9 +257,8 @@ impl ServeCommand {
                 .with_credentials(false)
         };
 
-        let cors_layer = create_cors_layer(cors_config).map_err(|e| {
-            LinkMLError::config(format!("Failed to create CORS layer: {e}"))
-        })?;
+        let cors_layer = create_cors_layer(cors_config)
+            .map_err(|e| LinkMLError::config(format!("Failed to create CORS layer: {e}")))?;
 
         let app = linkml_router.layer(cors_layer);
 

@@ -487,28 +487,27 @@ impl RdfLoader {
                     },
                     _ => Ok(JsonValue::String(value.to_string())),
                 }
-            }
-            // RDF-star support: When oxigraph adds Term::Triple variant, uncomment and implement:
-            // Term::Triple(triple) => {
-            //     // Convert quoted triple to a nested JSON object representation
-            //     let subj_term: Term = triple.subject.clone().into();
-            //     let obj_term = triple.object.clone();
-            //     let subj_value = Self::term_to_json(&subj_term)?;
-            //     let pred_name = triple.predicate.as_str();
-            //     let obj_value = Self::term_to_json(&obj_term)?;
-            //
-            //     // Represent as a reified statement object
-            //     let mut triple_obj = serde_json::Map::new();
-            //     triple_obj.insert(
-            //         "@type".to_string(),
-            //         JsonValue::String("rdf:Statement".to_string()),
-            //     );
-            //     triple_obj.insert("rdf:subject".to_string(), subj_value);
-            //     triple_obj.insert("rdf:predicate".to_string(), JsonValue::String(pred_name.to_string()));
-            //     triple_obj.insert("rdf:object".to_string(), obj_value);
-            //
-            //     Ok(JsonValue::Object(triple_obj))
-            // }
+            } // RDF-star support: When oxigraph adds Term::Triple variant, uncomment and implement:
+              // Term::Triple(triple) => {
+              //     // Convert quoted triple to a nested JSON object representation
+              //     let subj_term: Term = triple.subject.clone().into();
+              //     let obj_term = triple.object.clone();
+              //     let subj_value = Self::term_to_json(&subj_term)?;
+              //     let pred_name = triple.predicate.as_str();
+              //     let obj_value = Self::term_to_json(&obj_term)?;
+              //
+              //     // Represent as a reified statement object
+              //     let mut triple_obj = serde_json::Map::new();
+              //     triple_obj.insert(
+              //         "@type".to_string(),
+              //         JsonValue::String("rdf:Statement".to_string()),
+              //     );
+              //     triple_obj.insert("rdf:subject".to_string(), subj_value);
+              //     triple_obj.insert("rdf:predicate".to_string(), JsonValue::String(pred_name.to_string()));
+              //     triple_obj.insert("rdf:object".to_string(), obj_value);
+              //
+              //     Ok(JsonValue::Object(triple_obj))
+              // }
         }
     }
 
@@ -1418,16 +1417,10 @@ pub mod rdf_star {
     /// Check if a subject represents a reified statement
     ///
     /// Returns true if the subject has rdf:type rdf:Statement
-    pub fn is_reified_statement(
-        store: &Store,
-        subject: &NamedOrBlankNode,
-    ) -> bool {
-        let rdf_type = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-        );
-        let rdf_statement = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement"
-        );
+    pub fn is_reified_statement(store: &Store, subject: &NamedOrBlankNode) -> bool {
+        let rdf_type = NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+        let rdf_statement =
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement");
 
         store
             .quads_for_pattern(
@@ -1447,15 +1440,12 @@ pub mod rdf_star {
         store: &Store,
         statement_node: &NamedOrBlankNode,
     ) -> Option<(Term, NamedNode, Term)> {
-        let rdf_subject = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject"
-        );
-        let rdf_predicate = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate"
-        );
-        let rdf_object = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#object"
-        );
+        let rdf_subject =
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#subject");
+        let rdf_predicate =
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate");
+        let rdf_object =
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#object");
 
         // Get subject
         let subj = store
@@ -1507,11 +1497,7 @@ pub mod rdf_star {
     /// Convert reified statement to JSON representation
     ///
     /// This creates a JSON object representing the quoted triple
-    pub fn reified_to_json(
-        subj: &Term,
-        pred: &NamedNode,
-        obj: &Term,
-    ) -> LoaderResult<JsonValue> {
+    pub fn reified_to_json(subj: &Term, pred: &NamedNode, obj: &Term) -> LoaderResult<JsonValue> {
         let mut triple_obj = serde_json::Map::new();
 
         triple_obj.insert(
@@ -1519,20 +1505,14 @@ pub mod rdf_star {
             JsonValue::String("rdf:Statement".to_string()),
         );
 
-        triple_obj.insert(
-            "rdf:subject".to_string(),
-            RdfLoader::term_to_json(subj)?,
-        );
+        triple_obj.insert("rdf:subject".to_string(), RdfLoader::term_to_json(subj)?);
 
         triple_obj.insert(
             "rdf:predicate".to_string(),
             JsonValue::String(pred.as_str().to_string()),
         );
 
-        triple_obj.insert(
-            "rdf:object".to_string(),
-            RdfLoader::term_to_json(obj)?,
-        );
+        triple_obj.insert("rdf:object".to_string(), RdfLoader::term_to_json(obj)?);
 
         Ok(JsonValue::Object(triple_obj))
     }
@@ -1677,54 +1657,56 @@ ex:bob rdf:type ex:Person ;
 
         // Create the reified statement
         let stmt = BlankNode::default();
-        let rdf_type = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-        );
-        let rdf_statement = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement"
-        );
-        let rdf_subject = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject"
-        );
-        let rdf_predicate = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate"
-        );
-        let rdf_object = NamedNode::new_unchecked(
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#object"
-        );
+        let rdf_type = NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+        let rdf_statement =
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement");
+        let rdf_subject =
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#subject");
+        let rdf_predicate =
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate");
+        let rdf_object =
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#object");
 
         let alice = NamedNode::new_unchecked("http://example.org/alice");
         let knows = NamedNode::new_unchecked("http://example.org/knows");
         let bob = NamedNode::new_unchecked("http://example.org/bob");
 
         // Add reification triples
-        store.insert(&Quad::new(
-            stmt.clone(),
-            rdf_type.clone(),
-            rdf_statement.clone(),
-            GraphName::DefaultGraph,
-        )).expect("should insert quad: {}");
+        store
+            .insert(&Quad::new(
+                stmt.clone(),
+                rdf_type.clone(),
+                rdf_statement.clone(),
+                GraphName::DefaultGraph,
+            ))
+            .expect("should insert quad: {}");
 
-        store.insert(&Quad::new(
-            stmt.clone(),
-            rdf_subject.clone(),
-            alice.clone(),
-            GraphName::DefaultGraph,
-        )).expect("should insert quad: {}");
+        store
+            .insert(&Quad::new(
+                stmt.clone(),
+                rdf_subject.clone(),
+                alice.clone(),
+                GraphName::DefaultGraph,
+            ))
+            .expect("should insert quad: {}");
 
-        store.insert(&Quad::new(
-            stmt.clone(),
-            rdf_predicate.clone(),
-            knows.clone(),
-            GraphName::DefaultGraph,
-        )).expect("should insert quad: {}");
+        store
+            .insert(&Quad::new(
+                stmt.clone(),
+                rdf_predicate.clone(),
+                knows.clone(),
+                GraphName::DefaultGraph,
+            ))
+            .expect("should insert quad: {}");
 
-        store.insert(&Quad::new(
-            stmt.clone(),
-            rdf_object.clone(),
-            bob.clone(),
-            GraphName::DefaultGraph,
-        )).expect("should insert quad: {}");
+        store
+            .insert(&Quad::new(
+                stmt.clone(),
+                rdf_object.clone(),
+                bob.clone(),
+                GraphName::DefaultGraph,
+            ))
+            .expect("should insert quad: {}");
 
         // Test detection
         let stmt_node = NamedOrBlankNode::from(stmt.clone());
@@ -1739,8 +1721,8 @@ ex:bob rdf:type ex:Person ;
         assert_eq!(triple.2, Term::NamedNode(bob));
 
         // Test JSON conversion
-        let json = reified_to_json(&triple.0, &triple.1, &triple.2)
-            .expect("should convert to JSON: {}");
+        let json =
+            reified_to_json(&triple.0, &triple.1, &triple.2).expect("should convert to JSON: {}");
 
         assert_eq!(
             json.get("@type"),

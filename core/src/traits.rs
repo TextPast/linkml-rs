@@ -229,7 +229,7 @@ pub enum MigrationStep {
         /// Class name to remove field from
         class: String,
         /// Field name to remove
-        field: String
+        field: String,
     },
     /// Rename a field in a class
     RenameField {
@@ -254,12 +254,12 @@ pub enum MigrationStep {
     /// Add a new class to the schema
     AddClass {
         /// Name of the class to add
-        name: String
+        name: String,
     },
     /// Remove a class from the schema
     RemoveClass {
         /// Name of the class to remove
-        name: String
+        name: String,
     },
     /// Custom transformation with arbitrary logic
     Transform {

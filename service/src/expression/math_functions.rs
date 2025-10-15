@@ -476,7 +476,10 @@ mod tests {
         let abs_fn = AbsFunction;
         assert_eq!(abs_fn.call(vec![json!(-5)])?, json!(5.0));
         assert_eq!(abs_fn.call(vec![json!(5)])?, json!(5.0));
-        assert_eq!(abs_fn.call(vec![json!(-std::f64::consts::PI)])?, json!(std::f64::consts::PI));
+        assert_eq!(
+            abs_fn.call(vec![json!(-std::f64::consts::PI)])?,
+            json!(std::f64::consts::PI)
+        );
         Ok(())
     }
 
@@ -570,7 +573,10 @@ mod tests {
         // Round
         assert_eq!(round_fn.call(vec![json!(3.5)])?, json!(4.0));
         assert_eq!(round_fn.call(vec![json!(3.2)])?, json!(3.0));
-        assert_eq!(round_fn.call(vec![json!(std::f64::consts::PI), json!(2)])?, json!(std::f64::consts::PI));
+        assert_eq!(
+            round_fn.call(vec![json!(std::f64::consts::PI), json!(2)])?,
+            json!(std::f64::consts::PI)
+        );
         Ok(())
     }
 

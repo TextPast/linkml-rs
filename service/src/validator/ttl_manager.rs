@@ -457,8 +457,8 @@ impl TtlMaintenanceWorker {
 
 #[cfg(test)]
 mod tests {
-    use testing_mocks::MockTimestampService;
     use super::*;
+    use testing_mocks::MockTimestampService;
 
     #[test]
     fn test_ttl_entry() {
@@ -483,5 +483,4 @@ mod tests {
         assert_eq!(pattern.access_count, 5);
         assert!(pattern.avg_access_interval > Duration::from_secs(0));
     }
-
 }

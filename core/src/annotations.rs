@@ -21,7 +21,7 @@ pub enum Annotation {
         /// Annotation tag/key
         tag: String,
         /// Annotation value
-        value: AnnotationValue
+        value: AnnotationValue,
     },
 }
 
