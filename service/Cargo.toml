@@ -158,6 +158,9 @@ hash_core = { workspace = true }
 rate_limiting_core = { workspace = true }
 vector_database_core = { workspace = true }
 
+# Event bus for LinkML validation event handling
+event_bus_core = { workspace = true }
+
 # Format identification for automatic format detection
 format_identification_core = { workspace = true }
 format_identification_service = { workspace = true }

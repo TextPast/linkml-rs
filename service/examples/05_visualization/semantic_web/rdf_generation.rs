@@ -4,9 +4,7 @@
 //! modes (OWL, RDFS, Simple) and formats (Turtle, RDF/XML, N-Triples, JSON-LD).
 
 use linkml_core::prelude::*;
-use linkml_service::generator::{Generator, GeneratorOptions, RdfGenerator};
-// TODO: RdfFormat and RdfMode imports commented out - API mismatch
-// use linkml_service::generator::{RdfFormat, RdfMode};
+use linkml_service::generator::{Generator, GeneratorOptions, RdfFormat, RdfGenerator};
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -108,8 +106,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Example 4: JSON-LD format
     println!("4. RDF in JSON-LD format:");
     println!("-------------------------");
-    // TODO: JsonLd format not available in current API
-    let jsonld_generator = RdfGenerator::new(); // .with_format(RdfFormat::JsonLd);
+    let jsonld_generator = RdfGenerator::new().with_format(RdfFormat::JsonLd);
     let jsonld_outputs = jsonld_generator.generate(&schema, &options).await?;
     if let Some(output) = jsonld_outputs.first() {
         println!("Filename: {}", output.filename);
@@ -124,8 +121,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Example 5: N-Triples format (simple RDF)
     println!("5. RDF in N-Triples format:");
     println!("---------------------------");
-    // TODO: NTriples format and simple() method not available in current API
-    let ntriples_generator = RdfGenerator::new(); // RdfGenerator::simple().with_format(RdfFormat::NTriples);
+    let ntriples_generator = RdfGenerator::simple().with_format(RdfFormat::NTriples);
     let nt_outputs = ntriples_generator.generate(&schema, &options).await?;
     if let Some(output) = nt_outputs.first() {
         println!("Filename: {}", output.filename);

@@ -275,6 +275,10 @@ pub mod inference;
 /// SchemaSheets format support for lossless roundtrip conversion
 pub mod schemasheets;
 
+/// Event-driven validation request handler for event bus integration
+/// This module enables LinkML validation without circular dependencies
+pub mod validation_event_handler;
+
 // Re-export service trait and types
 pub use factory::{create_linkml_service, create_linkml_service_with_config};
 pub use linkml_core::error::LinkMLError;
