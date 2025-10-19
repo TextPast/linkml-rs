@@ -562,7 +562,7 @@ mod tests {
 
     #[test]
     fn test_sanitize_name() {
-        let logger = Arc::new(MockLogger);
+        let logger = Arc::new(MockLogger::new());
         let timestamp = Arc::new(MockTimestampService::new());
         let loader = ExcelLoader::new(logger, timestamp);
 

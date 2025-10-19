@@ -584,7 +584,7 @@ async fn create_test_services() -> TestServices {
 
     // Create mock services for testing
     let _logger: Arc<dyn LoggerService<Error = logger_core::error::LoggerError>> =
-        Arc::new(MockLogger);
+        Arc::new(MockLogger::new());
     let _timestamp: Arc<dyn TimestampService<Error = timestamp_core::error::TimestampError>> =
         Arc::new(MockTimestampService::new());
     let _cache: Arc<dyn CacheService<Error = cache_core::error::CacheError>> = Arc::new(MockCache);
