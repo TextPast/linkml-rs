@@ -1,7 +1,7 @@
 [package]
 name = "rootreal-model-symbolic-cargo-linkml-tool"
 version = "2.0.0"
-edition = "2024"
+edition = "2021"
 authors = ["RootReal Team <support@textpast.com>"]
 license = "CC-BY-NC-4.0"
 description = "Cargo plugin for LinkML schema validation and code generation"
