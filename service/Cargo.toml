@@ -176,6 +176,25 @@ telemetry_service = { workspace = true }
 timeout_service = { workspace = true }
 timestamp_core = { workspace = true }
 vector_database_service = { workspace = true }
+
+# Additional service dependencies for full_integration example
+cache_service = { workspace = true }
+circuit_breaker_service = { workspace = true }
+configuration_service = { workspace = true }
+event_sourcing_task_manager_service = { workspace = true }
+memory_service = { workspace = true }
+task_management_service = { workspace = true }
+embedding_service = { workspace = true }
+lakehouse_service = { workspace = true }
+snapshot_service = { workspace = true }
+authentication_service = { workspace = true }
+rootreal-security-identity-mfa = { workspace = true }
+policy_enforcement_service = { workspace = true }
+rate_limiting_service = { workspace = true }
+pattern_recognition_service = { workspace = true }
+som_service = { workspace = true }
+port_management_service = { workspace = true }
+
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }
 pretty_assertions = "1.4"
@@ -393,9 +412,9 @@ rand = "0.8"  # For test RngCore implementation
 # # path = "examples/05_visualization/semantic_web/semantic_web_generators.rs"
 # 
 # # 6 Integration
-# [[example]]
-# name = "full_integration"
-# path = "examples/06_integration/full_integration.rs"
+[[example]]
+name = "full_integration"
+path = "examples/06_integration/full_integration.rs"
 #
 # [[example]]
 # name = "rootreal_integration"

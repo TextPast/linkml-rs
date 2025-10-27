@@ -1,35 +1,53 @@
 //! Full RootReal service integration example for LinkML
 //!
-//! This example demonstrates the proper way to integrate LinkML with all 17 RootReal services
+//! This example demonstrates the proper way to integrate LinkML with all 22 RootReal services
 //! and register it with the REST API service instead of running as a standalone server.
 
 use std::path::PathBuf;
 
 // Core service imports
 use cache_service::wiring::wire_cache;
+use circuit_breaker_service::wiring::wire_circuit_breaker;
 use configuration_service::wiring::wire_configuration;
 use error_handling_service::wiring::wire_error_handling;
+use event_sourcing_task_manager_service::wiring::wire_event_sourcing;
 use hash_service::wiring::wire_hash;
 use logger_service::wiring::wire_logger;
+use memory_service::wiring::wire_memory;
 use monitoring_service::wiring::wire_monitoring;
 use random_service::wiring::wire_random;
 use task_management_service::wiring::wire_task_management;
 use telemetry_service::wiring::wire_telemetry;
 use timeout_service::wiring::wire_timeout;
+use timeout_service::random_wrapper::RandomServiceWrapper;
 use timestamp_service::wiring::wire_timestamp;
 
 // Data services
 use dbms_service::wiring::wire_dbms;
+use embedding_service::wiring::wire_embedding;
 use lakehouse_service::wiring::wire_lakehouse;
+use snapshot_service::wiring::wire_snapshot;
 use vector_database_service::wiring::wire_vector_database;
 
 // Security services
 use authentication_service::wiring::wire_authentication;
+// Note: MFA service uses package name rootreal-security-identity-mfa, not mfa_service
+use rootreal_security_identity_mfa::wiring::wire_mfa;
+use policy_enforcement_service::wiring::wire_policy_enforcement;
 use rate_limiting_service::wiring::wire_rate_limiting;
 
+// AI/ML services
+use pattern_recognition_service::wiring::wire_pattern_recognition;
+use som_service::wiring::wire_som;
+
+// Networking services
+use port_management_service::wiring::wire_port_management;
+
 // REST API and related services
-use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
-use restful_api_service::wiring::{ServiceDependencies, wire_restful_api};
+// Note: Frontend service uses package name rootreal-hub-web-frontend
+use rootreal_hub_web_frontend::cors::{CorsConfig, create_cors_layer};
+// Note: REST API service uses package name rootreal-hub-api-web-rest
+use rootreal_hub_api_web_rest::{ServiceDependencies, create_restful_api_service_from_deps};
 use shutdown_service::wiring::wire_shutdown;
 
 // LinkML service
@@ -40,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== RootReal LinkML Full Service Integration Example ===");
     println!();
     println!("This example demonstrates the proper architectural pattern for integrating");
-    println!("LinkML with all 17 RootReal services and the REST API service.");
+    println!("LinkML with all 22 RootReal services and the REST API service.");
     println!();
 
     // Phase 1: Create core services
@@ -54,10 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Phase 2: Create infrastructure services
     println!("Phase 2: Creating infrastructure services...");
     let task_manager = wire_task_management(timestamp.clone()).into_arc();
-    let error_handler =
-        wire_error_handling(logger.clone(), timestamp.clone(), task_manager.clone())
-            .await?
-            .into_arc();
+    let error_handler = wire_error_handling().await?.into_arc();
     let cache = wire_cache(
         logger.clone(),
         timestamp.clone(),
@@ -82,16 +97,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         logger.clone(),
         timestamp.clone(),
         task_manager.clone(),
-        None,
-    )
-    .await?
+        telemetry_service::TelemetryConfig::default(),
+    )?
     .into_arc();
 
     // Phase 3: Create timeout service
     println!("Phase 3: Creating timeout service...");
-    let timeout = wire_timeout(logger.clone(), timestamp.clone(), task_manager.clone())
-        .await?
-        .into_arc();
+    // Create RandomFloatGenerator wrapper for timeout service
+    let random_wrapper = std::sync::Arc::new(RandomServiceWrapper::new(random.clone()));
+    let timeout = wire_timeout(
+        timestamp.clone(),
+        logger.clone(),
+        random_wrapper,
+        telemetry.clone(),
+        task_manager.clone(),
+        timeout_service::TimeoutConfig::default(),
+    )
+    .await?
+    .into_arc();
 
     // Phase 4: Create data services
     println!("Phase 4: Creating data services...");
@@ -148,6 +171,98 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?
     .into_arc();
 
+    let mfa = wire_mfa(
+        logger.clone(),
+        timestamp.clone(),
+        config.clone(),
+        cache.clone(),
+    )
+    .await?
+    .into_arc();
+
+    let policy_enforcement = wire_policy_enforcement(
+        logger.clone(),
+        timestamp.clone(),
+        config.clone(),
+    )
+    .await?
+    .into_arc();
+
+    // Phase 5a: Create additional infrastructure services
+    println!("Phase 5a: Creating additional infrastructure services...");
+    let event_sourcing = wire_event_sourcing(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+    )
+    .await?
+    .into_arc();
+
+    let port_manager = wire_port_management(
+        logger.clone(),
+        timestamp.clone(),
+        config.clone(),
+    )
+    .await?
+    .into_arc();
+
+    let snapshot = wire_snapshot(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        dbms.clone(),
+    )
+    .await?
+    .into_arc();
+
+    let circuit_breaker = wire_circuit_breaker(
+        logger.clone(),
+        timestamp.clone(),
+        config.clone(),
+    )
+    .await?
+    .into_arc();
+
+    let memory = wire_memory(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+    )
+    .await?
+    .into_arc();
+
+    // Phase 5b: Create AI/ML services
+    println!("Phase 5b: Creating AI/ML services...");
+    let embedding = wire_embedding(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        config.clone(),
+    )
+    .await?
+    .into_arc();
+
+    let pattern_recognition = wire_pattern_recognition(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        config.clone(),
+    )
+    .await?
+    .into_arc();
+
+    let som = wire_som(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        config.clone(),
+    )
+    .await?
+    .into_arc();
+
+    // Note: Corner detection service temporarily removed due to workspace dependency issues
+    // TODO: Add corner_detection service once workspace dependency is properly configured
+    
     // Phase 6: Create LinkML service with all dependencies
     println!("Phase 6: Creating LinkML service...");
     let linkml = wire_linkml(
@@ -173,22 +288,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         timestamp: timestamp.clone(),
         hash: hash.clone(),
         rate_limiter: rate_limiter.clone(),
-        cache: cache.clone(),
+        event_sourcing: event_sourcing.clone(),
+        port_manager: port_manager.clone(),
+        authentication: auth.clone(),
+        mfa_service: mfa.clone(),
+        lakehouse: lakehouse.clone(),
         dbms: dbms.clone(),
         vector_db: vector_db.clone(),
-        lakehouse: lakehouse.clone(),
-        auth: auth.clone(),
-        telemetry: telemetry.clone(),
-        monitor: monitor.clone(),
-        error_handler: error_handler.clone(),
+        cache: cache.clone(),
+        snapshot: snapshot.clone(),
+        embedding: embedding.clone(),
+        circuit_breaker: circuit_breaker.clone(),
         task_manager: task_manager.clone(),
-        timeout: timeout.clone(),
+        policy_enforcement: policy_enforcement.clone(),
+        telemetry: telemetry.clone(),
         random: random.clone(),
+        memory: memory.clone(),
+        pattern_recognition: pattern_recognition.clone(),
+        som_service: som.clone(),
+        // Note: corner_detection_service temporarily removed (see Phase 5b)
     };
 
     // Phase 8: Create REST API service
     println!("Phase 8: Creating REST API service...");
-    let rest_api = wire_restful_api(rest_api_deps).await?.into_arc();
+    let rest_api = create_restful_api_service_from_deps(rest_api_deps).await?;
 
     // Phase 9: Register LinkML handlers with REST API service
     println!("Phase 9: Registering LinkML handlers with REST API...");
@@ -239,9 +362,13 @@ classes:
 
     // Phase 11: Setup shutdown service
     println!("Phase 11: Setting up graceful shutdown...");
-    let shutdown = wire_shutdown(logger.clone(), timestamp.clone(), task_manager.clone())
-        .await?
-        .into_arc();
+    let shutdown = wire_shutdown(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        shutdown_service::ShutdownConfig::default(),
+    )?
+    .into_arc();
 
     // Register shutdown hooks for all services
     shutdown.register_hook(
