@@ -249,8 +249,11 @@ impl ImportResolverV2 {
             }
         }
 
-        // Load schema based on type (URL or file)
-        let schema = if import_path.starts_with("http://") || import_path.starts_with("https://") {
+        // Load schema based on type (txp:, URL, or file)
+        let schema = if import_path.starts_with("txp:") {
+            // TextPast/RootReal convention: local-first with remote fallback
+            self.load_txp_import(&import_path).await?
+        } else if import_path.starts_with("http://") || import_path.starts_with("https://") {
             self.load_url_import(&import_path).await?
         } else {
             self.load_file_import(&import_path).await?
@@ -265,6 +268,53 @@ impl ImportResolverV2 {
         }
 
         Ok(schema)
+    }
+
+    /// Load schema using TextPast/RootReal txp: prefix convention
+    ///
+    /// Resolution strategy:
+    /// 1. Try local file in crates/model/symbolic/schemata/
+    /// 2. Fall back to https://textpast.org/ if not found
+    ///
+    /// Path mapping:
+    /// - Schema: txp:meta/entity/hyperentity/schema
+    ///   → Local: crates/model/symbolic/schemata/meta/entity/hyperentity/schema.yaml
+    ///   → Remote: https://textpast.org/schema/meta/entity/hyperentity
+    /// - Instance: txp:place/polity/country/iso_3166_entity
+    ///   → Local: crates/model/symbolic/schemata/place/polity/country/iso_3166_entity.yaml
+    ///   → Remote: https://textpast.org/instance/place/polity/country/iso_3166_entity
+    async fn load_txp_import(&self, txp_path: &str) -> Result<SchemaDefinition> {
+        // Remove txp: prefix
+        let path_without_prefix = txp_path.strip_prefix("txp:").unwrap_or(txp_path);
+
+        // Determine if this is a schema or instance import
+        let is_schema = path_without_prefix.ends_with("/schema");
+
+        // Try local file first
+        let local_base = PathBuf::from("crates/model/symbolic/schemata");
+        let local_path = local_base.join(format!("{}.yaml", path_without_prefix));
+
+        if local_path.exists() {
+            // Load from local file
+            let content = fs::read_to_string(&local_path)
+                .await
+                .map_err(|e| LinkMLError::import(txp_path, format!("Failed to read local file: {e}")))?;
+
+            return Self::parse_schema_content(&content, txp_path);
+        }
+
+        // Fall back to remote URL
+        let remote_url = if is_schema {
+            // Schema: remove /schema suffix from path for URL
+            let schema_path = path_without_prefix.strip_suffix("/schema").unwrap_or(path_without_prefix);
+            format!("https://textpast.org/schema/{}", schema_path)
+        } else {
+            // Instance
+            format!("https://textpast.org/instance/{}", path_without_prefix)
+        };
+
+        // Fetch from remote
+        self.load_url_import(&remote_url).await
     }
 
     /// Load schema from `URL`

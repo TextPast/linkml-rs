@@ -66,7 +66,7 @@ publishing {
 
                 licenses {
                     license {
-                        name.set("MIT License")
+                        name.set("CC-BY-NC-4.0 License")
                         url.set("https://opensource.org/licenses/MIT")
                     }
                 }

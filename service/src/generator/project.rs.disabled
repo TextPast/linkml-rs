@@ -66,6 +66,8 @@ pub enum LicenseType {
     Bsd3,
     /// GPL v3 License
     Gpl3,
+    /// Creative Commons BY-NC 4.0 License,
+    CC-BY-NC-4.0,
     /// Creative Commons CC0
     Cc0,
     /// No license (proprietary)

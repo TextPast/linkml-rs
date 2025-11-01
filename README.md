@@ -102,6 +102,12 @@ linkml/
 ├── scripts/           # Utility scripts
 ├── schemas/           # Example LinkML schemas
 └── docs/              # Comprehensive documentation
+
+RootReal LinkML Schemata Location:
+crates/model/symbolic/schemata/  # Production LinkML schemas for RootReal
+├── meta/              # Meta-level schemas (identifiers, labels, descriptions, etc.)
+├── place/             # Geographic and political entities
+└── ...                # Other domain-specific schemas
 ```
 
 ### Crates
@@ -109,6 +115,66 @@ linkml/
 - **linkml-core** - Core types, traits, and foundational functionality
 - **linkml-service** - Main validation and code generation service
 - **linkml-client** - Client library for LinkML services
+
+## RootReal/TextPast LinkML Conventions
+
+RootReal uses enhanced LinkML conventions for schema and instance management:
+
+### Schema Location
+- **Production schemas**: `crates/model/symbolic/schemata/`
+- **Legacy location**: `domain/schema/` (deprecated)
+
+### Schema Files
+Schema files follow the pattern: `{domain}/{subdomain}/schema.yaml`
+
+Example: `crates/model/symbolic/schemata/place/polity/country/schema.yaml`
+
+```yaml
+id: https://textpast.org/schema/place/polity/country
+name: country
+version: 1.0.0
+created_on: '2025-01-22T16:39:26+01:00'
+last_updated_on: '2025-01-22T16:39:26+01:00'
+imports:
+  - linkml:types
+  - txp:meta/entity/hyperentity/schema
+  - txp:meta/label/label/schema
+```
+
+### Instance Files
+Instance files explicitly reference their schema and contain metadata:
+
+Example: `crates/model/symbolic/schemata/place/polity/country/iso_3166_entity.yaml`
+
+```yaml
+id: https://textpast.org/instance/place/polity/country/iso_3166_entity
+schema: https://textpast.org/schema/place/polity/country/schema
+name: iso_3166_entity
+version: 1.0.0
+created_on: "2025-03-30T10:41:26+01:00"
+instances:
+  - id: "US"
+    label: "United States of America"
+    tld: ".us"
+    exact_mappings:
+      - wd:Q30
+```
+
+### Import Resolution (txp: prefix)
+The `txp:` prefix resolves to TextPast schemas with intelligent fallback:
+
+1. **Local-first**: Check `crates/model/symbolic/schemata/` (uses Cache Service)
+2. **Remote fallback**: Fetch from `https://textpast.org/` if not found locally
+
+**Schema imports**: `txp:meta/entity/hyperentity/schema` →
+- Local: `crates/model/symbolic/schemata/meta/entity/hyperentity/schema.yaml`
+- Remote: `https://textpast.org/schema/meta/entity/hyperentity`
+
+**Instance imports**: `txp:place/polity/country/iso_3166_entity` →
+- Local: `crates/model/symbolic/schemata/place/polity/country/iso_3166_entity.yaml`
+- Remote: `https://textpast.org/instance/place/polity/country/iso_3166_entity`
+
+Note: Schema paths end with `/schema`, instance paths end with the entity name.
 
 ## Documentation
 

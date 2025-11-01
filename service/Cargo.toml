@@ -410,11 +410,15 @@ rand = "0.8"  # For test RngCore implementation
 # # [[example]]
 # # name = "semantic_web_generators"
 # # path = "examples/05_visualization/semantic_web/semantic_web_generators.rs"
-# 
+#
 # # 6 Integration
 [[example]]
 name = "full_integration"
 path = "examples/06_integration/full_integration.rs"
+
+[[example]]
+name = "test_textpast_schemas"
+path = "examples/test_textpast_schemas.rs"
 #
 # [[example]]
 # name = "rootreal_integration"
@@ -576,6 +580,10 @@ path = "tests/schemasheets_validation_tests.rs"
 [[test]]
 name = "schemasheets_config_tests"
 path = "tests/schemasheets_config_tests.rs"
+
+[[test]]
+name = "test_textpast_schemas"
+path = "tests/test_textpast_schemas.rs"
 
 [[bin]]
 name = "linkml"
