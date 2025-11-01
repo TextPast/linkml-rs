@@ -7,6 +7,7 @@ use linkml_core::{
 };
 use reqwest;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tokio::fs;
 
 use super::{ImportResolverV2, Parser};
@@ -15,15 +16,43 @@ use super::{ImportResolverV2, Parser};
 pub struct SchemaLoader {
     parser: Parser,
     http_client: reqwest::Client,
+    /// Optional import resolver with custom HTTP client
+    import_resolver: Option<Arc<ImportResolverV2>>,
 }
 
 impl SchemaLoader {
-    /// Create a new schema loader
+    /// Create a new schema loader with default settings
     #[must_use]
     pub fn new() -> Self {
         Self {
             parser: Parser::new(),
             http_client: reqwest::Client::new(),
+            import_resolver: None,
+        }
+    }
+
+    /// Create a schema loader with a custom import resolver
+    ///
+    /// This allows using a production-ready HTTP client with rate limiting,
+    /// caching, retries, and logging for schema imports.
+    #[must_use]
+    pub fn with_resolver(resolver: ImportResolverV2) -> Self {
+        Self {
+            parser: Parser::new(),
+            http_client: reqwest::Client::new(),
+            import_resolver: Some(Arc::new(resolver)),
+        }
+    }
+
+    /// Create a schema loader with a shared import resolver
+    ///
+    /// This allows sharing the same resolver (and its cache) across multiple loaders.
+    #[must_use]
+    pub fn with_shared_resolver(resolver: Arc<ImportResolverV2>) -> Self {
+        Self {
+            parser: Parser::new(),
+            http_client: reqwest::Client::new(),
+            import_resolver: Some(resolver),
         }
     }
 
@@ -87,9 +116,15 @@ impl SchemaLoader {
             }
         }
 
-        // Resolve imports using enhanced resolver
-        let import_resolver = ImportResolverV2::with_settings(settings);
-        import_resolver.resolve_imports(&schema).await
+        // Resolve imports using custom resolver if available, otherwise create one
+        if let Some(ref resolver) = self.import_resolver {
+            // Use the provided resolver (may have production HTTP client)
+            resolver.resolve_imports(&schema).await
+        } else {
+            // Create a new resolver with settings
+            let import_resolver = ImportResolverV2::with_settings(settings);
+            import_resolver.resolve_imports(&schema).await
+        }
     }
 
     /// Load a schema from a `URL`
@@ -163,9 +198,13 @@ impl SchemaLoader {
             }
         }
 
-        // Resolve imports using enhanced resolver
-        let import_resolver = ImportResolverV2::with_settings(settings);
-        import_resolver.resolve_imports(&schema).await
+        // Resolve imports using custom resolver if available, otherwise create one
+        if let Some(ref resolver) = self.import_resolver {
+            resolver.resolve_imports(&schema).await
+        } else {
+            let import_resolver = ImportResolverV2::with_settings(settings);
+            import_resolver.resolve_imports(&schema).await
+        }
     }
 
     /// Load a schema from a string with specified format
@@ -183,9 +222,13 @@ impl SchemaLoader {
             ImportSettings::default()
         };
 
-        // Resolve imports using enhanced resolver
-        let import_resolver = ImportResolverV2::with_settings(settings);
-        import_resolver.resolve_imports(&schema).await
+        // Resolve imports using custom resolver if available, otherwise create one
+        if let Some(ref resolver) = self.import_resolver {
+            resolver.resolve_imports(&schema).await
+        } else {
+            let import_resolver = ImportResolverV2::with_settings(settings);
+            import_resolver.resolve_imports(&schema).await
+        }
     }
 }
 

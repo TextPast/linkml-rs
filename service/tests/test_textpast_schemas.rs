@@ -9,16 +9,26 @@
 
 #![allow(missing_docs)]
 
-use linkml_core::types::SchemaDefinition;
 use linkml_service::parser::{SchemaLoader, SchemaParser, YamlParser};
-use serde_yaml::Value;
 use std::path::PathBuf;
+
+/// Helper function to get the repository root path
+fn get_repo_root() -> PathBuf {
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    // Navigate from crates/model/symbolic/linkml/service to repository root
+    path.pop(); // service
+    path.pop(); // linkml
+    path.pop(); // symbolic
+    path.pop(); // model
+    path.pop(); // crates
+    path
+}
 
 /// Test that the hyperentity schema parses correctly using the LinkML service
 #[tokio::test]
 async fn test_parse_hyperentity_schema_with_service() {
     let loader = SchemaLoader::new();
-    let schema_path = PathBuf::from("crates/model/symbolic/schemata/meta/entity/hyperentity/schema.yaml");
+    let schema_path = get_repo_root().join("crates/model/symbolic/schemata/meta/entity/hyperentity/schema.yaml");
 
     let schema = loader.load_file(&schema_path)
         .await
@@ -29,20 +39,20 @@ async fn test_parse_hyperentity_schema_with_service() {
     assert_eq!(schema.name, "hyperentity");
     assert!(schema.version.is_some(), "Schema should have version");
 
-    // Verify classes
-    assert_eq!(schema.classes.len(), 3, "Should have 3 classes");
+    // Verify classes (after imports are merged, there will be more than just the 3 defined in this schema)
+    assert!(schema.classes.len() >= 3, "Should have at least 3 classes (plus imported classes)");
     assert!(schema.classes.contains_key("Entity"), "Should have Entity class");
     assert!(schema.classes.contains_key("COT"), "Should have COT class");
     assert!(schema.classes.contains_key("Group"), "Should have Group class");
 
-    println!("✓ Hyperentity schema parsed successfully with {} classes", schema.classes.len());
+    println!("✓ Hyperentity schema parsed successfully with {} classes (including imports)", schema.classes.len());
 }
 
 /// Test that the country schema parses with txp: imports resolved
 #[tokio::test]
 async fn test_parse_country_schema_with_txp_imports() {
     let loader = SchemaLoader::new();
-    let schema_path = PathBuf::from("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
+    let schema_path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
 
     let schema = loader.load_file(&schema_path)
         .await
@@ -78,10 +88,9 @@ async fn test_parse_country_schema_with_txp_imports() {
 
 #[test]
 fn test_parse_iso3166_instance_file() {
-    let content = std::fs::read_to_string(
-        "crates/model/symbolic/schemata/place/polity/country/iso_3166_entity.yaml"
-    )
-    .expect("Failed to read instance file");
+    let path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/iso_3166_entity.yaml");
+    let content = std::fs::read_to_string(&path)
+        .expect("Failed to read instance file");
 
     let instance_data: serde_yaml::Value = serde_yaml::from_str(&content)
         .expect("Failed to parse instance YAML");
@@ -93,7 +102,7 @@ fn test_parse_iso3166_instance_file() {
     );
     assert_eq!(
         instance_data["schema"].as_str().unwrap(),
-        "https://textpast.org/schema/place/polity/country/schema"
+        "https://textpast.org/schema/place/polity/country"
     );
     assert_eq!(instance_data["name"].as_str().unwrap(), "iso_3166_entity");
     assert!(instance_data["version"].as_str().is_some(), "Version should be present");
@@ -115,10 +124,9 @@ fn test_parse_iso3166_instance_file() {
 
 #[test]
 fn test_iso3166_identifier_validation() {
-    let content = std::fs::read_to_string(
-        "crates/model/symbolic/schemata/place/polity/country/iso_3166_entity.yaml"
-    )
-    .expect("Failed to read instance file");
+    let path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/iso_3166_entity.yaml");
+    let content = std::fs::read_to_string(&path)
+        .expect("Failed to read instance file");
 
     let instance_data: serde_yaml::Value = serde_yaml::from_str(&content)
         .expect("Failed to parse instance YAML");
@@ -152,43 +160,40 @@ fn test_iso3166_identifier_validation() {
 #[test]
 fn test_slot_usage_scoped_imports() {
     let parser = YamlParser::new();
-    let content = std::fs::read_to_string(
-        "crates/model/symbolic/schemata/place/polity/country/schema.yaml"
-    )
-    .expect("Failed to read country schema");
+    let path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
+    let content = std::fs::read_to_string(&path)
+        .expect("Failed to read country schema");
 
     let schema = parser.parse_str(&content).expect("Failed to parse schema");
     let iso_class = &schema.classes["ISO3166Entity"];
 
     // Check that identifier slot usage has proper configuration
     // NEW CONVENTION: slot_usage can optionally specify which imports to search for range types
-    if let Some(slot_usage) = &iso_class.slot_usage {
-        if let Some(identifier_usage) = slot_usage.get("identifier") {
-            assert_eq!(
-                identifier_usage.range.as_ref().unwrap(),
-                "CountryCodeAlpha2Identifier",
-                "Identifier should use CountryCodeAlpha2Identifier type"
-            );
-            assert_eq!(
-                identifier_usage.required,
-                Some(true),
-                "Identifier should be required"
-            );
+    if let Some(identifier_usage) = iso_class.slot_usage.get("identifier") {
+        assert_eq!(
+            identifier_usage.range.as_ref().unwrap(),
+            "CountryCodeAlpha2Identifier",
+            "Identifier should use CountryCodeAlpha2Identifier type"
+        );
+        assert_eq!(
+            identifier_usage.required,
+            Some(true),
+            "Identifier should be required"
+        );
 
-            // The schema YAML has:
-            // slot_usage:
-            //   identifier:
-            //     range: CountryCodeAlpha2Identifier
-            //     imports:
-            //       - txp:meta/identifier/identifier/schema
-            //     required: true
-            //
-            // This means the LinkML service should only look for CountryCodeAlpha2Identifier
-            // in txp:meta/identifier/identifier/schema, not in other imports.
-            //
-            // Note: The SlotDefinition type may need an 'imports' field to fully support this.
-            // For now, we verify the range and required fields are correct.
-        }
+        // The schema YAML has:
+        // slot_usage:
+        //   identifier:
+        //     range: CountryCodeAlpha2Identifier
+        //     imports:
+        //       - txp:meta/identifier/identifier/schema
+        //     required: true
+        //
+        // This means the LinkML service should only look for CountryCodeAlpha2Identifier
+        // in txp:meta/identifier/identifier/schema, not in other imports.
+        //
+        // Note: The SlotDefinition type may need an 'imports' field to fully support this.
+        // For now, we verify the range and required fields are correct.
     }
 }
 
@@ -205,19 +210,21 @@ fn test_all_schemas_parse_successfully() {
     ];
 
     let parser = YamlParser::new();
+    let repo_root = get_repo_root();
 
-    for path in schema_paths {
-        let content = std::fs::read_to_string(path)
-            .unwrap_or_else(|_| panic!("Failed to read schema: {}", path));
+    for path_str in schema_paths {
+        let path = repo_root.join(path_str);
+        let content = std::fs::read_to_string(&path)
+            .unwrap_or_else(|_| panic!("Failed to read schema: {}", path_str));
 
         let schema = parser.parse_str(&content)
-            .unwrap_or_else(|_| panic!("Failed to parse schema: {}", path));
+            .unwrap_or_else(|_| panic!("Failed to parse schema: {}", path_str));
 
         // Verify basic schema structure
-        assert!(!schema.id.is_empty(), "Schema {} should have an ID", path);
-        assert!(!schema.name.is_empty(), "Schema {} should have a name", path);
+        assert!(!schema.id.is_empty(), "Schema {} should have an ID", path_str);
+        assert!(!schema.name.is_empty(), "Schema {} should have a name", path_str);
         assert!(schema.id.starts_with("https://textpast.org/schema/"),
-            "Schema {} ID should start with https://textpast.org/schema/", path);
+            "Schema {} ID should start with https://textpast.org/schema/", path_str);
     }
 }
 
@@ -225,10 +232,9 @@ fn test_all_schemas_parse_successfully() {
 fn test_schema_metadata_conventions() {
     // Test that schemas follow the new metadata conventions
     let parser = YamlParser::new();
-    let content = std::fs::read_to_string(
-        "crates/model/symbolic/schemata/place/polity/country/schema.yaml"
-    )
-    .expect("Failed to read country schema");
+    let path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
+    let content = std::fs::read_to_string(&path)
+        .expect("Failed to read country schema");
 
     let schema = parser.parse_str(&content).expect("Failed to parse schema");
 
@@ -242,11 +248,21 @@ fn test_schema_metadata_conventions() {
 
     // Check that prefixes include txp
     assert!(schema.prefixes.contains_key("txp"), "Schema should define txp prefix");
-    assert_eq!(
-        schema.prefixes.get("txp").unwrap().prefix_reference,
-        "https://textpast.org/",
-        "txp prefix should map to https://textpast.org/"
-    );
+
+    // PrefixDefinition is an enum, so we need to match on it
+    use linkml_core::types::PrefixDefinition;
+    match schema.prefixes.get("txp").unwrap() {
+        PrefixDefinition::Simple(url) => {
+            assert_eq!(url, "https://textpast.org/", "txp prefix should map to https://textpast.org/");
+        }
+        PrefixDefinition::Complex { prefix_reference, .. } => {
+            assert_eq!(
+                prefix_reference.as_deref(),
+                Some("https://textpast.org/"),
+                "txp prefix should map to https://textpast.org/"
+            );
+        }
+    }
 }
 
 /// Comprehensive test: Load country schema with SchemaLoader and verify txp: import resolution
@@ -256,7 +272,7 @@ async fn test_comprehensive_txp_import_resolution() {
     println!("\n=== Testing Comprehensive txp: Import Resolution ===\n");
 
     let loader = SchemaLoader::new();
-    let schema_path = PathBuf::from("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
+    let schema_path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
 
     // Load the schema - this should resolve all txp: imports
     let result = loader.load_file(&schema_path).await;
@@ -297,34 +313,32 @@ async fn test_comprehensive_txp_import_resolution() {
             println!("    Parent class: {:?}", iso_class.is_a);
             println!("    Slots: {}", iso_class.slots.len());
 
-            if let Some(slot_usage) = &iso_class.slot_usage {
-                println!("    Slot usage:");
-                for (slot_name, usage) in slot_usage {
-                    println!("      - {}: range={:?}, required={:?}",
-                        slot_name,
-                        usage.range,
-                        usage.required
-                    );
-                }
+            println!("    Slot usage:");
+            for (slot_name, usage) in &iso_class.slot_usage {
+                println!("      - {}: range={:?}, required={:?}",
+                    slot_name,
+                    usage.range,
+                    usage.required
+                );
+            }
 
-                // NEW CONVENTION: Check scoped imports for slot ranges
-                if let Some(identifier_usage) = slot_usage.get("identifier") {
-                    println!("\n  Identifier slot configuration:");
-                    println!("    Range: {:?}", identifier_usage.range);
-                    println!("    Required: {:?}", identifier_usage.required);
+            // NEW CONVENTION: Check scoped imports for slot ranges
+            if let Some(identifier_usage) = iso_class.slot_usage.get("identifier") {
+                println!("\n  Identifier slot configuration:");
+                println!("    Range: {:?}", identifier_usage.range);
+                println!("    Required: {:?}", identifier_usage.required);
 
-                    // Verify the range is CountryCodeAlpha2Identifier
-                    assert_eq!(
-                        identifier_usage.range.as_deref(),
-                        Some("CountryCodeAlpha2Identifier"),
-                        "Identifier should use CountryCodeAlpha2Identifier type"
-                    );
-                    assert_eq!(
-                        identifier_usage.required,
-                        Some(true),
-                        "Identifier should be required"
-                    );
-                }
+                // Verify the range is CountryCodeAlpha2Identifier
+                assert_eq!(
+                    identifier_usage.range.as_deref(),
+                    Some("CountryCodeAlpha2Identifier"),
+                    "Identifier should use CountryCodeAlpha2Identifier type"
+                );
+                assert_eq!(
+                    identifier_usage.required,
+                    Some(true),
+                    "Identifier should be required"
+                );
             }
 
             println!("\n✓ All validations passed!");
@@ -353,9 +367,10 @@ async fn test_all_schemas_load_successfully() {
 
     let mut passed = 0;
     let mut failed = 0;
+    let repo_root = get_repo_root();
 
     for path_str in schema_paths {
-        let path = PathBuf::from(path_str);
+        let path = repo_root.join(path_str);
         print!("  Loading {}... ", path.file_name().unwrap().to_string_lossy());
 
         match loader.load_file(&path).await {

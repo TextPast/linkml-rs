@@ -1,12 +1,13 @@
 //! Enhanced import resolution for `LinkML` schemas
 //!
 //! This module provides advanced import resolution capabilities including:
-//! - URL-based imports
+//! - URL-based imports with rate limiting, caching, and retries (via external API service)
 //! - Import aliases and mappings
 //! - Selective imports
 //! - Conflict resolution
 //! - Version checking
 
+use external_api_core::HttpClient;
 use linkml_core::{
     error::{LinkMLError, Result},
     settings::{ImportResolutionStrategy, ImportSettings},
@@ -53,8 +54,10 @@ pub struct ImportResolverV2 {
     cache: Arc<RwLock<HashMap<String, SchemaDefinition>>>,
     /// Import settings from schema
     settings: Arc<RwLock<ImportSettings>>,
-    /// `HTTP` client for URL imports
-    http_client: reqwest::Client,
+    /// HTTP client for URL imports (with rate limiting, caching, retries)
+    http_client: Option<Arc<dyn HttpClient>>,
+    /// Fallback reqwest client for when external API client is not available
+    fallback_client: reqwest::Client,
     /// Visited imports for circular dependency detection
     visited_stack: Arc<RwLock<Vec<String>>>,
 }
@@ -72,7 +75,8 @@ impl ImportResolverV2 {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(ImportSettings::default())),
-            http_client: reqwest::Client::new(),
+            http_client: None,
+            fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
         }
     }
@@ -83,7 +87,32 @@ impl ImportResolverV2 {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(settings)),
-            http_client: reqwest::Client::new(),
+            http_client: None,
+            fallback_client: reqwest::Client::new(),
+            visited_stack: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+
+    /// Create with external API HTTP client (production-ready with rate limiting, caching, retries)
+    #[must_use]
+    pub fn with_http_client(http_client: Arc<dyn HttpClient>) -> Self {
+        Self {
+            cache: Arc::new(RwLock::new(HashMap::new())),
+            settings: Arc::new(RwLock::new(ImportSettings::default())),
+            http_client: Some(http_client),
+            fallback_client: reqwest::Client::new(),
+            visited_stack: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+
+    /// Create with both settings and HTTP client
+    #[must_use]
+    pub fn with_settings_and_client(settings: ImportSettings, http_client: Arc<dyn HttpClient>) -> Self {
+        Self {
+            cache: Arc::new(RwLock::new(HashMap::new())),
+            settings: Arc::new(RwLock::new(settings)),
+            http_client: Some(http_client),
+            fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
         }
     }
@@ -249,10 +278,13 @@ impl ImportResolverV2 {
             }
         }
 
-        // Load schema based on type (txp:, URL, or file)
+        // Load schema based on type (txp:, linkml:, URL, or file)
         let schema = if import_path.starts_with("txp:") {
             // TextPast/RootReal convention: local-first with remote fallback
             self.load_txp_import(&import_path).await?
+        } else if import_path.starts_with("linkml:") {
+            // LinkML standard library imports
+            self.load_linkml_import(&import_path).await?
         } else if import_path.starts_with("http://") || import_path.starts_with("https://") {
             self.load_url_import(&import_path).await?
         } else {
@@ -291,10 +323,10 @@ impl ImportResolverV2 {
         let is_schema = path_without_prefix.ends_with("/schema");
 
         // Try local file first
-        let local_base = PathBuf::from("crates/model/symbolic/schemata");
-        let local_path = local_base.join(format!("{}.yaml", path_without_prefix));
+        // Use absolute path or search in current directory and parent directories
+        let local_path = self.find_local_schema_file(path_without_prefix)?;
 
-        if local_path.exists() {
+        if let Some(local_path) = local_path {
             // Load from local file
             let content = fs::read_to_string(&local_path)
                 .await
@@ -312,6 +344,25 @@ impl ImportResolverV2 {
             // Instance
             format!("https://textpast.org/instance/{}", path_without_prefix)
         };
+
+        // Fetch from remote
+        self.load_url_import(&remote_url).await
+    }
+
+    /// Load schema using LinkML standard library prefix convention
+    ///
+    /// Resolution strategy:
+    /// 1. Try to fetch from https://w3id.org/linkml/
+    ///
+    /// Path mapping:
+    /// - linkml:types → https://w3id.org/linkml/types.yaml
+    /// - linkml:meta → https://w3id.org/linkml/meta.yaml
+    async fn load_linkml_import(&self, linkml_path: &str) -> Result<SchemaDefinition> {
+        // Remove linkml: prefix
+        let path_without_prefix = linkml_path.strip_prefix("linkml:").unwrap_or(linkml_path);
+
+        // Construct the remote URL
+        let remote_url = format!("https://w3id.org/linkml/{}.yaml", path_without_prefix);
 
         // Fetch from remote
         self.load_url_import(&remote_url).await
@@ -338,21 +389,42 @@ impl ImportResolverV2 {
             )
         };
 
-        let response =
-            self.http_client.get(&final_url).send().await.map_err(|e| {
-                LinkMLError::import(&final_url, format!("Failed to fetch URL: {e}"))
-            })?;
+        // Use external API client if available, otherwise fall back to reqwest
+        let content = if let Some(ref http_client) = self.http_client {
+            // Use production-ready HTTP client with rate limiting, caching, retries
+            let response = http_client
+                .get(&final_url, None)
+                .await
+                .map_err(|e| LinkMLError::import(&final_url, format!("Failed to fetch URL: {e}")))?;
 
-        if !response.status().is_success() {
-            return Err(LinkMLError::import(
-                &final_url,
-                format!("HTTP error: {}", response.status()),
-            ));
-        }
+            if response.status_code != 200 {
+                return Err(LinkMLError::import(
+                    &final_url,
+                    format!("HTTP error: {}", response.status_code),
+                ));
+            }
 
-        let content = response.text().await.map_err(|e| {
-            LinkMLError::import(&final_url, format!("Failed to read response: {e}"))
-        })?;
+            response.body
+        } else {
+            // Fallback to direct reqwest client
+            let response = self
+                .fallback_client
+                .get(&final_url)
+                .send()
+                .await
+                .map_err(|e| LinkMLError::import(&final_url, format!("Failed to fetch URL: {e}")))?;
+
+            if !response.status().is_success() {
+                return Err(LinkMLError::import(
+                    &final_url,
+                    format!("HTTP error: {}", response.status()),
+                ));
+            }
+
+            response.text().await.map_err(|e| {
+                LinkMLError::import(&final_url, format!("Failed to read response: {e}"))
+            })?
+        };
 
         // Parse based on URL extension
         Self::parse_schema_content(&content, &final_url)
@@ -402,6 +474,56 @@ impl ImportResolverV2 {
                     Self::find_in_paths(import, &paths, &extensions)
                 })
             }
+        }
+    }
+
+    /// Find local schema file in the repository
+    ///
+    /// Walks up from the current directory to find the repository root (identified by
+    /// Cargo.toml with [workspace]), then looks for the schema file in
+    /// crates/model/symbolic/schemata/
+    fn find_local_schema_file(&self, path_without_prefix: &str) -> Result<Option<PathBuf>> {
+        let schema_file = format!("{}.yaml", path_without_prefix);
+
+        // Get current directory
+        let mut current_dir = std::env::current_dir()
+            .map_err(|e| LinkMLError::service(format!("Failed to get current directory: {e}")))?;
+
+        // Walk up to find repository root (directory with Cargo.toml containing [workspace])
+        loop {
+            let cargo_toml = current_dir.join("Cargo.toml");
+            if cargo_toml.exists() {
+                // Check if this is the workspace root
+                if let Ok(content) = std::fs::read_to_string(&cargo_toml) {
+                    if content.contains("[workspace]") {
+                        // Found workspace root
+                        break;
+                    }
+                }
+            }
+
+            // Try parent directory
+            match current_dir.parent() {
+                Some(parent) => current_dir = parent.to_path_buf(),
+                None => {
+                    // Reached filesystem root without finding workspace
+                    // Fall back to original current_dir
+                    current_dir = std::env::current_dir()
+                        .map_err(|e| LinkMLError::service(format!("Failed to get current directory: {e}")))?;
+                    break;
+                }
+            }
+        }
+
+        // Construct path: crates/model/symbolic/schemata/{path}.yaml
+        let schema_path = current_dir
+            .join("crates/model/symbolic/schemata")
+            .join(&schema_file);
+
+        if schema_path.exists() {
+            Ok(Some(schema_path))
+        } else {
+            Ok(None)
         }
     }
 

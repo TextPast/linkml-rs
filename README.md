@@ -116,6 +116,50 @@ crates/model/symbolic/schemata/  # Production LinkML schemas for RootReal
 - **linkml-service** - Main validation and code generation service
 - **linkml-client** - Client library for LinkML services
 
+## Production-Ready HTTP Imports
+
+The LinkML import resolver integrates with RootReal's external API service for production-ready HTTP imports with:
+
+- **Rate Limiting** - Prevents overwhelming external schema servers
+- **Response Caching** - Avoids redundant fetches of the same schema
+- **Retry Logic** - Handles transient network failures gracefully
+- **Request Logging** - Tracks all external schema fetches for debugging
+- **Authentication** - Supports private schema repositories
+- **Connection Pooling** - Better performance for multiple imports
+
+### Using External API Client
+
+```rust
+use linkml_service::parser::{ImportResolverV2, SchemaLoader};
+use external_api_service::http::client::StandardHttpClient;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create HTTP client with all production features
+    let http_client = StandardHttpClient::new(
+        config,
+        logger,
+        hash_service,
+        cache_service,
+        rate_limiting_service,
+    )?;
+
+    // Create import resolver with external API client
+    let resolver = ImportResolverV2::with_http_client(Arc::new(http_client));
+
+    // Create schema loader
+    let loader = SchemaLoader::with_resolver(resolver);
+
+    // Load schema with imports (uses production-ready HTTP client)
+    let schema = loader.load_file("schema.yaml").await?;
+
+    Ok(())
+}
+```
+
+See `examples/import_with_external_api.rs` for a complete example.
+
 ## RootReal/TextPast LinkML Conventions
 
 RootReal uses enhanced LinkML conventions for schema and instance management:

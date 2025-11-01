@@ -9,6 +9,7 @@ use linkml_core::{
 };
 use std::path::Path;
 
+pub mod factory;
 pub mod import_resolver;
 pub mod import_resolver_v2;
 pub mod json_parser;

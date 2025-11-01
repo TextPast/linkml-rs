@@ -451,29 +451,9 @@ impl TypeQLGenerator {
     pub fn set_default_type(&mut self, default_type: String) {
         self.default_type = default_type;
     }
-}
 
-impl Default for TypeQLGenerator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl AsyncGenerator for TypeQLGenerator {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn description(&self) -> &'static str {
-        "Generate TypeQL schema definitions for TypeDB from LinkML schemas"
-    }
-
-    fn file_extensions(&self) -> Vec<&str> {
-        vec![".tql", ".typeql"]
-    }
-
-    async fn validate_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
+    /// Synchronous schema validation (no async needed)
+    fn validate_schema_sync(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
         // Validate schema has required fields for TypeQL generation
         if schema.name.is_empty() {
             return Err(GeneratorError::Validation(
@@ -527,13 +507,14 @@ impl AsyncGenerator for TypeQLGenerator {
         Ok(())
     }
 
-    async fn generate(
+    /// Synchronous generation method (no async needed)
+    fn generate_sync(
         &self,
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
     ) -> GeneratorResult<Vec<GeneratedOutput>> {
         // Validate schema
-        AsyncGenerator::validate_schema(self, schema).await?;
+        self.validate_schema_sync(schema)?;
 
         let mut output = String::new();
         let indent = &options.indent;
@@ -549,13 +530,7 @@ impl AsyncGenerator for TypeQLGenerator {
             writeln!(&mut output, "# Description: {desc}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(
-            &mut output,
-            "
-define
-"
-        )
-        .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "\ndefine\n").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate attributes first
         self.generate_attributes(&mut output, schema, indent)?;
@@ -600,7 +575,42 @@ define
     }
 }
 
-// Implement the synchronous Generator trait for backward compatibility
+impl Default for TypeQLGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl AsyncGenerator for TypeQLGenerator {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn description(&self) -> &'static str {
+        "Generate TypeQL schema definitions for TypeDB from LinkML schemas"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec![".tql", ".typeql"]
+    }
+
+    async fn validate_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
+        // Call the synchronous validation method
+        self.validate_schema_sync(schema)
+    }
+
+    async fn generate(
+        &self,
+        schema: &SchemaDefinition,
+        options: &GeneratorOptions,
+    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+        // Call the synchronous generation method
+        self.generate_sync(schema, options)
+    }
+}
+
+// Implement the synchronous Generator trait
 impl Generator for TypeQLGenerator {
     fn name(&self) -> &'static str {
         "typeql"
@@ -611,23 +621,15 @@ impl Generator for TypeQLGenerator {
     }
 
     fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
-        // Use tokio to run the async validation
-        let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
-
-        runtime
-            .block_on(AsyncGenerator::validate_schema(self, schema))
+        // Call the synchronous validation method directly
+        self.validate_schema_sync(schema)
             .map_err(|e| LinkMLError::service(e.to_string()))
     }
 
     fn generate(&self, schema: &SchemaDefinition) -> Result<String> {
-        // Use tokio to run the async version
-        let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
-
+        // Call the synchronous generation method directly
         let options = GeneratorOptions::new();
-        let outputs = runtime
-            .block_on(AsyncGenerator::generate(self, schema, &options))
+        let outputs = self.generate_sync(schema, &options)
             .map_err(|e| LinkMLError::service(e.to_string()))?;
 
         // Concatenate all outputs into a single string
@@ -635,10 +637,7 @@ impl Generator for TypeQLGenerator {
             .into_iter()
             .map(|output| output.content)
             .collect::<Vec<_>>()
-            .join(
-                "
-",
-            ))
+            .join("\n"))
     }
 
     fn get_file_extension(&self) -> &'static str {

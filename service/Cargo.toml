@@ -110,13 +110,19 @@ calamine = "0.28"  # Excel/ODS parsing for schema introspection
 
 # RDF support
 oxigraph = { workspace = true }
+oxrdf = "0.2"        # RDF datastructures
+oxrdfio = "0.1"      # Unified RDF parser/serializer API
+oxttl = "0.1"        # Turtle, TriG, N-Triples, N-Quads
+oxrdfxml = "0.1"     # RDF/XML
 
 # Database support - PostgreSQL and MySQL only (no SQLite to avoid burn conflicts)
 # Use unified sqlx dependency from workspace
 sqlx = { workspace = true, optional = true }
 
 # HTTP client and server
-reqwest = { version = "0.12", features = ["json", "stream"] }
+# Using external API service for production-ready HTTP handling with rate limiting, caching, retries
+external_api_core = { workspace = true }
+reqwest = { version = "0.12", features = ["json", "stream"] }  # Still needed for tests and fallback
 axum = { workspace = true, features = ["json", "tokio"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
@@ -584,6 +590,21 @@ path = "tests/schemasheets_config_tests.rs"
 [[test]]
 name = "test_textpast_schemas"
 path = "tests/test_textpast_schemas.rs"
+
+[[example]]
+name = "import_with_external_api"
+path = "examples/import_with_external_api.rs"
+required-features = []
+
+[[example]]
+name = "test_all_schemas"
+path = "examples/test_all_schemas.rs"
+required-features = []
+
+[[example]]
+name = "test_pattern_imports"
+path = "examples/test_pattern_imports.rs"
+required-features = []
 
 [[bin]]
 name = "linkml"
