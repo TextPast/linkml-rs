@@ -142,7 +142,6 @@ indicatif = "0.17"
 rustyline = "14.0"
 linkml_core = { workspace = true }
 rootreal-hub-api-web-rest-core = { workspace = true }
-rootreal-hub-web-frontend = { workspace = true }
 shutdown_core = { workspace = true }
 logger_core = { workspace = true }
 logger_service = { workspace = true }
@@ -227,197 +226,172 @@ rand = "0.8"  # For test RngCore implementation
 # 3. Uncomment the example declarations below
 # 4. Test each example individually
 # ============================================================================
-#
-# # Examples organized by category (3-level nesting)
-# # Run with: cargo run --example <name>
-# 
-# # 1 Basic
-# [[example]]
-# name = "basic_usage"
-# path = "examples/01_basic/api/basic_usage.rs"
-#
-# [[example]]
-# name = "basic_usage_api"
-# path = "examples/01_basic/api/basic_usage_api.rs"
-#
-# [[example]]
-# name = "standalone_usage"
-# path = "examples/01_basic/api/standalone_usage.rs"
-# 
-# [[example]]
-# name = "cli_usage"
-# path = "examples/01_basic/cli/cli_usage.rs"
-# 
-# [[example]]
-# name = "cli_with_fs_adapter"
-# path = "examples/01_basic/cli/cli_with_fs_adapter.rs"
-# 
-# # 2 Validation
-# [[example]]
-# name = "advanced_validation"
-# path = "examples/02_validation/api/advanced_validation.rs"
-#
-# # NOTE: advanced_validation_api temporarily disabled due to API changes
-# # [[example]]
-# # name = "advanced_validation_api"
-# # path = "examples/02_validation/api/advanced_validation_api.rs"
-# 
-# # NOTE: test_instance_validation temporarily disabled due to API changes
-# # [[example]]
-# # name = "test_instance_validation"
-# # path = "examples/02_validation/api/test_instance_validation.rs"
-# 
-# [[example]]
-# name = "parse_and_validate_iso3166"
-# path = "examples/02_validation/iso3166/parse_and_validate_iso3166.rs"
-# 
-# [[example]]
-# name = "validate_country_schema"
-# path = "examples/02_validation/iso3166/validate_country_schema.rs"
-# 
-# [[example]]
-# name = "validate_iso3166_standalone"
-# path = "examples/02_validation/iso3166/validate_iso3166_standalone.rs"
-# 
-# # NOTE: validate_with_parse_service temporarily disabled due to API changes
-# # [[example]]
-# # name = "validate_with_parse_service"
-# # path = "examples/02_validation/patterns/validate_with_parse_service.rs"
-# 
-# [[example]]
-# name = "validation_patterns"
-# path = "examples/02_validation/patterns/validation_patterns.rs"
-# 
-# # 3 Data Loading
-# [[example]]
-# name = "array_support"
-# path = "examples/03_data_loading/batch/array_support.rs"
-# 
-# [[example]]
-# name = "linkml_batch_processing"
-# path = "examples/03_data_loading/batch/batch_processing.rs"
-# 
-# [[example]]
-# name = "data_transformation"
-# path = "examples/03_data_loading/batch/data_transformation.rs"
-# 
-# [[example]]
-# name = "csv_data_loading"
-# path = "examples/03_data_loading/csv/csv_data_loading.rs"
-# 
-# [[example]]
-# name = "csv_introspection_demo"
-# path = "examples/03_data_loading/csv/csv_introspection_demo.rs"
-# 
-# [[example]]
-# name = "api_loading"
-# path = "examples/03_data_loading/database/api_loading.rs"
-# 
-# [[example]]
-# name = "database_loading"
-# path = "examples/03_data_loading/database/database_loading.rs"
-# 
-# # NOTE: excel_generation temporarily disabled due to API changes
-# # [[example]]
-# # name = "excel_generation"
-# # path = "examples/03_data_loading/excel/excel_generation.rs"
-# 
-# [[example]]
-# name = "excel_generation_advanced"
-# path = "examples/03_data_loading/excel/excel_generation_advanced.rs"
-# 
-# # 4 Code Generation
-# # NOTE: sqlalchemy_generation temporarily disabled due to API changes
-# # [[example]]
-# # name = "sqlalchemy_generation"
-# # path = "examples/04_code_generation/database/sqlalchemy_generation.rs"
-# 
-# # NOTE: typeql_generation temporarily disabled due to API changes
-# # [[example]]
-# # name = "typeql_generation"
-# # path = "examples/04_code_generation/database/typeql_generation.rs"
-# 
-# [[example]]
-# name = "code_generation_showcase"
-# path = "examples/04_code_generation/general/code_generation_showcase.rs"
-# 
-# [[example]]
-# name = "generate_code_from_schema"
-# path = "examples/04_code_generation/general/generate_code_from_schema.rs"
-# 
-# [[example]]
-# name = "generate_complete_example"
-# path = "examples/04_code_generation/general/generate_complete_example.rs"
-# 
-# [[example]]
-# name = "test_code_generation"
-# path = "examples/04_code_generation/general/test_code_generation.rs"
-# 
-# # NOTE: generate_iso3166_code temporarily disabled due to API changes
-# # [[example]]
-# # name = "generate_iso3166_code"
-# # path = "examples/04_code_generation/iso3166/generate_iso3166_code.rs"
-# 
-# [[example]]
-# name = "generate_iso3166_simple"
-# path = "examples/04_code_generation/iso3166/generate_iso3166_simple.rs"
-# 
-# # NOTE: rust_code_generation temporarily disabled due to API changes
-# # [[example]]
-# # name = "rust_code_generation"
-# # path = "examples/04_code_generation/rust/rust_code_generation.rs"
-# 
-# # NOTE: test_rust_generator_comprehensive temporarily disabled due to API changes
-# # [[example]]
-# # name = "test_rust_generator_comprehensive"
-# # path = "examples/04_code_generation/rust/test_rust_generator_comprehensive.rs"
-# 
-# # NOTE: verify_rust_generator temporarily disabled due to API changes
-# # [[example]]
-# # name = "verify_rust_generator"
-# # path = "examples/04_code_generation/rust/verify_rust_generator.rs"
-# 
-# # NOTE: verify_rust_generator_fix temporarily disabled due to API changes
-# # [[example]]
-# # name = "verify_rust_generator_fix"
-# # path = "examples/04_code_generation/rust/verify_rust_generator_fix.rs"
-# 
-# # 5 Visualization
-# # NOTE: graphviz_generation temporarily disabled due to API changes
-# # [[example]]
-# # name = "graphviz_generation"
-# # path = "examples/05_visualization/diagrams/graphviz_generation.rs"
-# 
-# [[example]]
-# name = "mermaid_generation"
-# path = "examples/05_visualization/diagrams/mermaid_generation.rs"
-# 
-# [[example]]
-# name = "project_generation"
-# path = "examples/05_visualization/schemas/project_generation.rs"
-#
-# [[example]]
-# name = "schema_generation"
-# path = "examples/05_visualization/schemas/schema_generation.rs"
-#
-# [[example]]
-# name = "schema_generation_api"
-# path = "examples/05_visualization/schemas/schema_generation_api.rs"
-# 
-# [[example]]
-# name = "prefix_map_generation"
-# path = "examples/05_visualization/semantic_web/prefix_map_generation.rs"
-# 
-# [[example]]
-# name = "rdf_generation"
-# path = "examples/05_visualization/semantic_web/rdf_generation.rs"
-# 
-# # NOTE: semantic_web_generators temporarily disabled due to API changes
-# # [[example]]
-# # name = "semantic_web_generators"
-# # path = "examples/05_visualization/semantic_web/semantic_web_generators.rs"
-#
-# # 6 Integration
+
+# Examples organized by category (3-level nesting)
+# Run with: cargo run --example <name>
+
+# 1 Basic
+[[example]]
+name = "basic_usage_api"
+path = "examples/01_basic/api/basic_usage_api.rs"
+
+[[example]]
+name = "standalone_usage"
+path = "examples/01_basic/api/standalone_usage.rs"
+
+[[example]]
+name = "cli_usage"
+path = "examples/01_basic/cli/cli_usage.rs"
+
+[[example]]
+name = "cli_with_fs_adapter"
+path = "examples/01_basic/cli/cli_with_fs_adapter.rs"
+
+# 2 Validation
+[[example]]
+name = "advanced_validation"
+path = "examples/02_validation/api/advanced_validation.rs"
+
+[[example]]
+name = "advanced_validation_api"
+path = "examples/02_validation/api/advanced_validation_api.rs"
+
+[[example]]
+name = "parse_and_validate_iso3166"
+path = "examples/02_validation/iso3166/parse_and_validate_iso3166.rs"
+
+[[example]]
+name = "validate_iso3166_standalone"
+path = "examples/02_validation/iso3166/validate_iso3166_standalone.rs"
+
+[[example]]
+name = "validate_with_parse_service"
+path = "examples/02_validation/patterns/validate_with_parse_service.rs"
+
+[[example]]
+name = "validation_patterns"
+path = "examples/02_validation/patterns/validation_patterns.rs"
+
+# 3 Data Loading
+[[example]]
+name = "array_support"
+path = "examples/03_data_loading/batch/array_support.rs"
+
+[[example]]
+name = "linkml_batch_processing"
+path = "examples/03_data_loading/batch/batch_processing.rs"
+
+[[example]]
+name = "data_transformation"
+path = "examples/03_data_loading/batch/data_transformation.rs"
+
+[[example]]
+name = "csv_data_loading"
+path = "examples/03_data_loading/csv/csv_data_loading.rs"
+
+[[example]]
+name = "csv_introspection_demo"
+path = "examples/03_data_loading/csv/csv_introspection_demo.rs"
+
+[[example]]
+name = "api_loading"
+path = "examples/03_data_loading/database/api_loading.rs"
+
+[[example]]
+name = "database_loading"
+path = "examples/03_data_loading/database/database_loading.rs"
+
+[[example]]
+name = "excel_generation"
+path = "examples/03_data_loading/excel/excel_generation.rs"
+
+[[example]]
+name = "excel_generation_advanced"
+path = "examples/03_data_loading/excel/excel_generation_advanced.rs"
+
+# 4 Code Generation
+[[example]]
+name = "sqlalchemy_generation"
+path = "examples/04_code_generation/database/sqlalchemy_generation.rs"
+
+[[example]]
+name = "typeql_generation"
+path = "examples/04_code_generation/database/typeql_generation.rs"
+
+[[example]]
+name = "code_generation_showcase"
+path = "examples/04_code_generation/general/code_generation_showcase.rs"
+
+[[example]]
+name = "generate_code_from_schema"
+path = "examples/04_code_generation/general/generate_code_from_schema.rs"
+
+[[example]]
+name = "generate_complete_example"
+path = "examples/04_code_generation/general/generate_complete_example.rs"
+
+[[example]]
+name = "test_code_generation"
+path = "examples/04_code_generation/general/test_code_generation.rs"
+
+[[example]]
+name = "generate_iso3166_code"
+path = "examples/04_code_generation/iso3166/generate_iso3166_code.rs"
+
+[[example]]
+name = "generate_iso3166_simple"
+path = "examples/04_code_generation/iso3166/generate_iso3166_simple.rs"
+
+[[example]]
+name = "rust_code_generation"
+path = "examples/04_code_generation/rust/rust_code_generation.rs"
+
+[[example]]
+name = "test_rust_generator_comprehensive"
+path = "examples/04_code_generation/rust/test_rust_generator_comprehensive.rs"
+
+[[example]]
+name = "verify_rust_generator"
+path = "examples/04_code_generation/rust/verify_rust_generator.rs"
+
+[[example]]
+name = "verify_rust_generator_fix"
+path = "examples/04_code_generation/rust/verify_rust_generator_fix.rs"
+
+# 5 Visualization
+[[example]]
+name = "graphviz_generation"
+path = "examples/05_visualization/diagrams/graphviz_generation.rs"
+
+[[example]]
+name = "mermaid_generation"
+path = "examples/05_visualization/diagrams/mermaid_generation.rs"
+
+[[example]]
+name = "project_generation"
+path = "examples/05_visualization/schemas/project_generation.rs"
+
+[[example]]
+name = "schema_generation"
+path = "examples/05_visualization/schemas/schema_generation.rs"
+
+[[example]]
+name = "schema_generation_api"
+path = "examples/05_visualization/schemas/schema_generation_api.rs"
+
+[[example]]
+name = "prefix_map_generation"
+path = "examples/05_visualization/semantic_web/prefix_map_generation.rs"
+
+[[example]]
+name = "rdf_generation"
+path = "examples/05_visualization/semantic_web/rdf_generation.rs"
+
+[[example]]
+name = "semantic_web_generators"
+path = "examples/05_visualization/semantic_web/semantic_web_generators.rs"
+
+# 6 Integration
 [[example]]
 name = "full_integration"
 path = "examples/06_integration/full_integration.rs"
@@ -425,79 +399,72 @@ path = "examples/06_integration/full_integration.rs"
 [[example]]
 name = "test_textpast_schemas"
 path = "examples/test_textpast_schemas.rs"
-#
-# [[example]]
-# name = "rootreal_integration"
-# path = "examples/06_integration/rootreal_integration.rs"
-#
-# # NOTE: page_xml_schema_inference temporarily disabled due to API changes
-# # [[example]]
-# # name = "page_xml_schema_inference"
-# # path = "examples/06_integration/schemas/page_xml_schema_inference.rs"
-# 
-# # NOTE: schema_migration_example already disabled earlier
-# # [[example]]
-# # name = "schema_migration_example"
-# # path = "examples/06_integration/schemas/schema_migration_example.rs"
-# 
-# # NOTE: typedb_integration temporarily disabled due to API changes
-# # [[example]]
-# # name = "typedb_integration"
-# # path = "examples/06_integration/typedb/typedb_integration.rs"
-# 
-# # NOTE: typeql_performance_check temporarily disabled due to API changes
-# # [[example]]
-# # name = "typeql_performance_check"
-# # path = "examples/06_integration/typedb/typeql_performance_check.rs"
-# 
-# # 7 Performance
-# # NOTE: performance_comparison temporarily disabled due to API changes
-# # [[example]]
-# # name = "performance_comparison"
-# # path = "examples/07_performance/benchmarks/performance_comparison.rs"
-# 
-# # NOTE: performance_summary already disabled (file was renamed earlier)
-# # [[example]]
-# # name = "performance_summary"
-# # path = "examples/07_performance/benchmarks/performance_summary.rs"
-# 
-# [[example]]
-# name = "expression_performance_demo"
-# path = "examples/07_performance/security/expression_performance_demo.rs"
-# 
-# [[example]]
-# name = "performance_and_security"
-# path = "examples/07_performance/security/performance_and_security.rs"
-# 
-# # 8 Advanced
-# [[example]]
-# name = "comprehensive_demo"
-# path = "examples/08_advanced/comprehensive/comprehensive_demo.rs"
-# 
-# [[example]]
-# name = "comprehensive_usage"
-# path = "examples/08_advanced/comprehensive/comprehensive_usage.rs"
-# 
-# [[example]]
-# name = "expression_functions_demo"
-# path = "examples/08_advanced/expressions/expression_functions_demo.rs"
-# 
-# [[example]]
-# name = "expression_language"
-# path = "examples/08_advanced/expressions/expression_language.rs"
-# 
-# [[example]]
-# name = "interactive_repl_demo"
-# path = "examples/08_advanced/extensibility/interactive_repl_demo.rs"
-# 
-# # NOTE: plugin_system_demo temporarily disabled due to API changes
-# # [[example]]
-# # name = "plugin_system_demo"
-# # path = "examples/08_advanced/extensibility/plugin_system_demo.rs"
-# 
-# [[example]]
-# name = "schema_builder_demo"
-# path = "examples/08_advanced/extensibility/schema_builder_demo.rs"
+
+[[example]]
+name = "rootreal_integration"
+path = "examples/06_integration/rootreal_integration.rs"
+
+[[example]]
+name = "page_xml_schema_inference"
+path = "examples/06_integration/schemas/page_xml_schema_inference.rs"
+
+[[example]]
+name = "schema_migration_example"
+path = "examples/06_integration/schemas/schema_migration_example.rs"
+
+[[example]]
+name = "typedb_integration"
+path = "examples/06_integration/typedb/typedb_integration.rs"
+
+[[example]]
+name = "typeql_performance_check"
+path = "examples/06_integration/typedb/typeql_performance_check.rs"
+
+# 7 Performance
+[[example]]
+name = "performance_comparison"
+path = "examples/07_performance/benchmarks/performance_comparison.rs"
+
+[[example]]
+name = "performance_summary"
+path = "examples/07_performance/benchmarks/performance_summary.rs"
+
+[[example]]
+name = "expression_performance_demo"
+path = "examples/07_performance/security/expression_performance_demo.rs"
+
+[[example]]
+name = "performance_and_security"
+path = "examples/07_performance/security/performance_and_security.rs"
+
+# 8 Advanced
+[[example]]
+name = "comprehensive_demo"
+path = "examples/08_advanced/comprehensive/comprehensive_demo.rs"
+
+[[example]]
+name = "comprehensive_usage"
+path = "examples/08_advanced/comprehensive/comprehensive_usage.rs"
+
+[[example]]
+name = "expression_functions_demo"
+path = "examples/08_advanced/expressions/expression_functions_demo.rs"
+
+[[example]]
+name = "expression_language"
+path = "examples/08_advanced/expressions/expression_language.rs"
+
+[[example]]
+name = "interactive_repl_demo"
+path = "examples/08_advanced/extensibility/interactive_repl_demo.rs"
+
+[[example]]
+name = "plugin_system_demo"
+path = "examples/08_advanced/extensibility/plugin_system_demo.rs"
+
+[[example]]
+name = "schema_builder_demo"
+path = "examples/08_advanced/extensibility/schema_builder_demo.rs"
 # 
 [[bench]]
 name = "validation_benchmarks"
@@ -591,6 +558,10 @@ path = "tests/schemasheets_config_tests.rs"
 name = "test_textpast_schemas"
 path = "tests/test_textpast_schemas.rs"
 
+[[test]]
+name = "instance_based_validation_test"
+path = "tests/instance_based_validation_test.rs"
+
 [[example]]
 name = "import_with_external_api"
 path = "examples/import_with_external_api.rs"
@@ -604,6 +575,21 @@ required-features = []
 [[example]]
 name = "test_pattern_imports"
 path = "examples/test_pattern_imports.rs"
+required-features = []
+
+[[example]]
+name = "comprehensive_instance_validation"
+path = "examples/02_validation/api/comprehensive_instance_validation.rs"
+required-features = []
+
+[[example]]
+name = "test_instance_validation"
+path = "examples/02_validation/api/test_instance_validation.rs"
+required-features = []
+
+[[example]]
+name = "validate_country_schema"
+path = "examples/02_validation/iso3166/validate_country_schema.rs"
 required-features = []
 
 [[bin]]
