@@ -4,7 +4,7 @@
 //! with `RootReal`'s existing services instead of implementing its own HTTP server.
 //! It uses:
 //! - REST API Service for HTTP handling
-//! - Frontend Framework CORS service for cross-origin handling
+//! - Tower HTTP CORS service for cross-origin handling
 //! - Shutdown Service for graceful termination
 //! - Proper `RootReal` service integration patterns
 
@@ -15,7 +15,7 @@ use axum::{
     response::Json,
     routing::{get, post},
 };
-use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
+use tower_http::cors::{CorsLayer, Any};
 use linkml_core::{
     error::{LinkMLError, Result},
     types::SchemaDefinition,
@@ -246,19 +246,18 @@ impl ServeCommand {
         // Create LinkML-specific router with proper RootReal patterns
         let linkml_router = create_linkml_router(linkml_state);
 
-        // Use frontend-framework CORS service with proper configuration
-        let cors_config = if self.is_development_mode() {
+        // Use tower-http CORS layer with proper configuration
+        let cors_layer = if self.is_development_mode() {
             // Development mode: permissive CORS for local testing
-            CorsConfig::development()
+            CorsLayer::permissive()
         } else {
             // Production mode: strict CORS with explicit origins
-            CorsConfig::production()
-                .with_origins(&[&format!("http://{}:{}", self.host, self.port)])
-                .with_credentials(false)
+            CorsLayer::new()
+                .allow_origin(format!("http://{}:{}", self.host, self.port).parse::<axum::http::HeaderValue>()
+                    .map_err(|e| LinkMLError::config(format!("Invalid CORS origin: {e}")))?)
+                .allow_methods(Any)
+                .allow_headers(Any)
         };
-
-        let cors_layer = create_cors_layer(cors_config)
-            .map_err(|e| LinkMLError::config(format!("Failed to create CORS layer: {e}")))?;
 
         let app = linkml_router.layer(cors_layer);
 

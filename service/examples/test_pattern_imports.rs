@@ -8,7 +8,8 @@
 
 use linkml_core::error::Result;
 use linkml_service::parser::factory::create_dev_schema_loader;
-use std::path::PathBuf;
+use linkml_service::validator::ValidationEngine;
+use serde_json::json;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -64,7 +65,7 @@ async fn main() -> Result<()> {
         }
     } else {
         println!("✗ No settings section found!");
-        return Err(linkml_core::error::LinkMLError::validation(
+        return Err(linkml_core::error::LinkMLError::schema_validation(
             "identifier schema should have settings section with patterns"
         ));
     }
@@ -115,18 +116,20 @@ async fn main() -> Result<()> {
     
     if let Some(fqn_class) = fqn_schema.classes.get("FQN") {
         println!("✓ Found FQN class");
-        
-        if let Some(slot_usage) = &fqn_class.slot_usage {
+
+        // slot_usage is an IndexMap, not an Option
+        let slot_usage = &fqn_class.slot_usage;
+        if !slot_usage.is_empty() {
             println!("✓ FQN class has slot_usage");
-            
+
             if let Some(fqn_slot) = slot_usage.get("fqn") {
                 println!("✓ Found fqn slot usage");
-                
+
                 if let Some(structured_pattern) = &fqn_slot.structured_pattern {
                     println!("✓ fqn slot has structured_pattern");
                     println!("  - syntax: {:?}", structured_pattern.syntax);
                     println!("  - interpolated: {:?}", structured_pattern.interpolated);
-                    
+
                     // Check if it references the fqn_pattern
                     if structured_pattern.syntax.as_ref().map_or(false, |s| s.contains("{fqn_pattern}")) {
                         println!("✓ structured_pattern correctly references {{fqn_pattern}}");
@@ -140,10 +143,124 @@ async fn main() -> Result<()> {
         }
     }
 
+    // ========================================================================
+    // Part 3: Test Pattern Validation Through LinkML (not just regex)
+    // ========================================================================
+
     println!("\n========================================");
-    println!("Pattern Import Tests Complete");
+    println!("Part 3: Pattern Validation Tests");
+    println!("========================================\n");
+
+    // Test country code pattern validation through ValidationEngine
+    println!("Testing country_code_alpha2_identifier_pattern:");
+    let engine = ValidationEngine::new(&identifier_schema)?;
+
+    let pattern_test_cases = vec![
+        ("US", true, "Valid: matches pattern [A-Z]{2}"),
+        ("GB", true, "Valid: matches pattern [A-Z]{2}"),
+        ("FR", true, "Valid: matches pattern [A-Z]{2}"),
+        ("us", false, "Invalid: lowercase doesn't match pattern"),
+        ("USA", false, "Invalid: too long (3 chars)"),
+        ("U", false, "Invalid: too short (1 char)"),
+        ("U1", false, "Invalid: contains digit"),
+        ("", false, "Invalid: empty string"),
+    ];
+
+    println!("\nValidating through ValidationEngine:");
+    let mut passed = 0;
+    let mut failed = 0;
+
+    for (value, expected, description) in &pattern_test_cases {
+        let data = json!({
+            "identifier": value
+        });
+
+        let report = engine.validate_as_class(&data, "CountryCodeAlpha2Identifier", None).await?;
+        let is_valid = report.valid;
+
+        let status = if is_valid == *expected {
+            passed += 1;
+            "✓"
+        } else {
+            failed += 1;
+            "✗ UNEXPECTED"
+        };
+
+        println!("  {} '{}': {} - {}", status, value,
+            if is_valid { "Valid  " } else { "Invalid" }, description);
+
+        let errors: Vec<_> = report.errors().collect();
+        if !is_valid && !errors.is_empty() {
+            println!("      Error: {}", errors[0].message);
+        }
+    }
+
+    println!("\nPattern validation test summary: {} passed, {} failed", passed, failed);
+
+    // ========================================================================
+    // Part 4: Test Pattern Import Validation (if FQN schema exists)
+    // ========================================================================
+
+    println!("\n========================================");
+    println!("Part 4: Pattern Import Validation");
+    println!("========================================\n");
+
+    if fqn_schema_path.exists() {
+        println!("Testing FQN pattern interpolation:");
+        let fqn_engine = ValidationEngine::new(&fqn_schema)?;
+
+        // Test FQN validation with interpolated patterns
+        let fqn_test_cases = vec![
+            ("US-NY-NYC-g-smithsonian", true, "Valid: all components match patterns"),
+            ("GB-LN-LON-m-british", true, "Valid: UK museum"),
+            ("XX-NY-NYC-g-smithsonian", false, "Invalid: XX not a valid country code"),
+            ("US-NY-NYC-invalid-smithsonian", false, "Invalid: bad GLAM type"),
+            ("us-ny-nyc-g-smithsonian", false, "Invalid: lowercase country code"),
+        ];
+
+        println!("\nValidating FQN with interpolated patterns:");
+        let mut fqn_passed = 0;
+        let mut fqn_failed = 0;
+
+        for (fqn, expected, description) in &fqn_test_cases {
+            let data = json!({
+                "fqn": fqn
+            });
+
+            let report = fqn_engine.validate_as_class(&data, "FQN", None).await?;
+            let is_valid = report.valid;
+
+            let status = if is_valid == *expected {
+                fqn_passed += 1;
+                "✓"
+            } else {
+                fqn_failed += 1;
+                "✗ UNEXPECTED"
+            };
+
+            println!("  {} '{}': {} - {}", status, fqn,
+                if is_valid { "Valid  " } else { "Invalid" }, description);
+
+            let errors: Vec<_> = report.errors().collect();
+            if !is_valid && !errors.is_empty() {
+                println!("      Error: {}", errors[0].message);
+            }
+        }
+
+        println!("\nFQN pattern validation test summary: {} passed, {} failed", fqn_passed, fqn_failed);
+    } else {
+        println!("⚠ FQN schema not found, skipping FQN pattern validation tests");
+    }
+
+    println!("\n========================================");
+    println!("Pattern Import and Validation Tests Complete");
     println!("========================================");
-    
+    println!("\nSummary:");
+    println!("  ✓ Pattern definitions loaded from settings");
+    println!("  ✓ Pattern imports resolved correctly");
+    println!("  ✓ Pattern validation tested through ValidationEngine");
+    println!("  ✓ Pattern interpolation tested (if FQN schema available)");
+
     Ok(())
 }
 

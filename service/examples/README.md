@@ -16,6 +16,18 @@ Start with the basic examples:
 - [`01_basic/api/basic_usage_api.rs`](01_basic/api/basic_usage_api.rs) - Start here for core API usage
 - [`01_basic/api/standalone_usage.rs`](01_basic/api/standalone_usage.rs) - Minimal dependencies example
 
+### Instance-Based Validation (NEW!)
+**RootReal/Textpast Convention Examples:**
+- [`02_validation/api/comprehensive_instance_validation.rs`](02_validation/api/comprehensive_instance_validation.rs) - **START HERE** for instance-based validation
+- [`02_validation/api/test_instance_validation.rs`](02_validation/api/test_instance_validation.rs) - Country code validation example
+- [`02_validation/iso3166/validate_country_schema.rs`](02_validation/iso3166/validate_country_schema.rs) - Complete ISO 3166 validation workflow
+
+**Key Concepts:**
+- Instance imports use `/instance` suffix: `txp:place/polity/country/iso_3166_entity/instance`
+- `range_type: instance` triggers instance-based validation
+- `range_properties: [id]` specifies which field to validate against
+- Works with any field name (id, timezone_component_value, etc.)
+
 ### Run Any Example
 ```bash
 # From repository root
@@ -76,15 +88,16 @@ examples/
 - [`cli_usage.rs`](01_basic/cli/cli_usage.rs) - Command-line interface usage
 - [`cli_with_fs_adapter.rs`](01_basic/cli/cli_with_fs_adapter.rs) - CLI with filesystem adapter
 
-### 02. Validation (7 examples)
+### 02. Validation (8 examples)
 
 **API Validation** (`02_validation/api/`)
+- [`comprehensive_instance_validation.rs`](02_validation/api/comprehensive_instance_validation.rs) - **NEW!** Complete instance-based validation demo
+- [`test_instance_validation.rs`](02_validation/api/test_instance_validation.rs) - Instance-based validation with country codes
 - [`advanced_validation_api.rs`](02_validation/api/advanced_validation_api.rs) - Advanced validation patterns
-- [`test_instance_validation.rs`](02_validation/api/test_instance_validation.rs) - Instance-based validation
 
 **ISO 3166 Validation** (`02_validation/iso3166/`)
+- [`validate_country_schema.rs`](02_validation/iso3166/validate_country_schema.rs) - **UPDATED!** Country schema validation with instance-based validation
 - [`parse_and_validate_iso3166.rs`](02_validation/iso3166/parse_and_validate_iso3166.rs) - Parse and validate ISO codes
-- [`validate_country_schema.rs`](02_validation/iso3166/validate_country_schema.rs) - Country schema validation
 - [`validate_iso3166_standalone.rs`](02_validation/iso3166/validate_iso3166_standalone.rs) - Standalone ISO validation
 
 **Validation Patterns** (`02_validation/patterns/`)
@@ -301,8 +314,103 @@ cargo run --example <example_name>
 
 The full examples require RootReal services. Use the standalone examples (`01_basic/api/standalone_usage.rs`) for testing without dependencies.
 
+## Instance-Based Validation Patterns
+
+### Overview
+Instance-based validation is a critical RootReal/Textpast convention where values are validated against actual instance data from YAML files.
+
+### Supported Patterns
+
+#### 1. Country Codes (ISO 3166)
+```yaml
+# Schema
+slot_usage:
+  identifier:
+    range: ISO3166Entity
+    range_type: instance
+    range_properties: [id]
+
+# Instance file: place/polity/country/iso_3166_entity.yaml
+instances:
+  - id: "US"
+    label: "United States"
+  - id: "AD"
+    label: "Andorra"
+```
+
+#### 2. Timezones
+```yaml
+# Uses custom field name
+range_properties: [timezone_component_value]
+
+# Instance file: time/timezone/timezone.yaml
+instances:
+  - timezone_component_value: "Europe/London"
+  - timezone_component_value: "America/New_York"
+```
+
+#### 3. Languages (ISO 639-3)
+```yaml
+# Large dataset with multiple fields
+range_properties: [id]
+
+# Instance file: language/iso_639-3/iso_639-3_entity.yaml
+instances:
+  - id: "eng"
+    label: "English"
+    scope: "individual"
+    language_type: "living"
+```
+
+#### 4. Document Parsers
+```yaml
+# Complex structure with metadata
+range_properties: [id]
+
+# Instance file: meta/document/document_parser/document_parser.yaml
+instances:
+  - id: "pdf_parser"
+    name: "PDF Parser"
+    version: "1.0.0"
+    description: "Parses PDF documents"
+```
+
+### Usage in Code
+
+```rust
+use linkml_service::validator::{InstanceLoader, InstanceResolver};
+use timestamp_service::wiring::wire_timestamp;
+
+// Initialize resolver
+let timestamp = wire_timestamp().into_arc();
+let loader = Arc::new(InstanceLoader::new(timestamp));
+let resolver = InstanceResolver::new(schemata_dir, loader);
+
+// Get valid IDs
+let valid_ids = resolver.get_valid_ids_for_slot(slot, &schema).await?;
+
+// Validate a value
+let is_valid = resolver.validate_instance_value("US", slot, &schema).await?;
+```
+
+### Running Instance Validation Examples
+
+```bash
+# Comprehensive demo of all patterns
+cargo run --example comprehensive_instance_validation
+
+# Country code validation
+cargo run --example test_instance_validation
+
+# Complete ISO 3166 workflow
+cargo run --example validate_country_schema
+```
+
 ## Further Reading
 
+- [Instance Validation Implementation Complete](../../../../../INSTANCE_VALIDATION_IMPLEMENTATION_COMPLETE.md)
+- [Instance Validation Final Summary](../../../../../INSTANCE_VALIDATION_FINAL_SUMMARY.md)
+- [LinkML Instance Validation Examples Complete](../../../../../LINKML_INSTANCE_VALIDATION_EXAMPLES_COMPLETE.md)
 - [Validation Architecture](../../../../domain/schema/docs/VALIDATION_ARCHITECTURE.md)
 - [Legacy Python Docs](../../../../domain/schema/docs/legacy/)
 - [LinkML Core Types](../../linkml-core/src/types.rs)

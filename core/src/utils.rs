@@ -247,6 +247,15 @@ pub fn merge_slot_definitions(
             .structured_pattern
             .clone()
             .or_else(|| base.structured_pattern.clone()),
+        range_type: override_def
+            .range_type
+            .clone()
+            .or_else(|| base.range_type.clone()),
+        range_properties: if override_def.range_properties.is_empty() {
+            base.range_properties.clone()
+        } else {
+            override_def.range_properties.clone()
+        },
         annotations: crate::annotations::merge_annotations(
             base.annotations.as_ref(),
             override_def.annotations.as_ref(),

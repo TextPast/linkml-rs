@@ -116,6 +116,78 @@ impl InstanceLoader {
         Ok(instance_data)
     }
 
+    /// Load instance data from a file (auto-detects format)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be read or parsed.
+    pub async fn load_file(
+        &self,
+        path: impl AsRef<Path>,
+        config: &InstanceConfig,
+    ) -> linkml_core::error::Result<Arc<InstanceData>> {
+        let path = path.as_ref();
+
+        // Detect file type by extension
+        let extension = path.extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+
+        match extension {
+            "yaml" | "yml" => self.load_yaml_file(path, config).await,
+            "json" => self.load_json_file(path, config).await,
+            "csv" => self.load_csv_file(path, config).await,
+            _ => Err(LinkMLError::parse(format!(
+                "Unsupported instance file format: {extension}"
+            ))),
+        }
+    }
+
+    /// Load instance data from a YAML file
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the YAML file cannot be read or parsed.
+    pub async fn load_yaml_file(
+        &self,
+        path: impl AsRef<Path>,
+        config: &InstanceConfig,
+    ) -> linkml_core::error::Result<Arc<InstanceData>> {
+        let path = path.as_ref();
+        let cache_key = format!("file:{}", path.display());
+
+        // Check cache first
+        if let Some(cached) = self.cache.get(&cache_key) {
+            return Ok(Arc::clone(&cached));
+        }
+
+        // Read and parse file
+        let content = tokio::fs::read_to_string(path)
+            .await
+            .map_err(LinkMLError::from)?;
+
+        let yaml: serde_yaml::Value = serde_yaml::from_str(&content)
+            .map_err(|e| LinkMLError::parse(format!("Invalid YAML in instance file: {e}")))?;
+
+        // Extract values based on config
+        let values = Self::extract_values_from_yaml(&yaml, config)?;
+
+        let loaded_at =
+            self.timestamp_service.now_utc().await.map_err(|e| {
+                LinkMLError::service(format!("Failed to get current timestamp: {e}"))
+            })?;
+
+        let instance_data = Arc::new(InstanceData {
+            values,
+            source: cache_key.clone(),
+            loaded_at,
+        });
+
+        // Cache the result
+        self.cache.insert(cache_key, Arc::clone(&instance_data));
+        Ok(instance_data)
+    }
+
     /// Load instance data from a CSV file
     ///
     /// # Errors
@@ -271,6 +343,92 @@ impl InstanceLoader {
             let value = if let Some(value_field) = &config.value_field {
                 obj_map
                     .get(value_field)
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| {
+                        LinkMLError::data_validation(format!(
+                            "Value field '{value_field}' not found or not a string"
+                        ))
+                    })?
+                    .to_string()
+            } else {
+                key.clone()
+            };
+
+            values.entry(key).or_default().push(value);
+        }
+
+        Ok(())
+    }
+
+    /// Extract values from YAML based on configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns error if YAML structure doesn't match configuration requirements
+    fn extract_values_from_yaml(
+        yaml: &serde_yaml::Value,
+        config: &InstanceConfig,
+    ) -> Result<HashMap<String, Vec<String>>> {
+        let mut values: HashMap<String, Vec<String>> = HashMap::new();
+
+        // Look for 'instances' key (RootReal/Textpast convention)
+        if let Some(mapping) = yaml.as_mapping() {
+            if let Some(instances_value) = mapping.get(&serde_yaml::Value::String("instances".to_string())) {
+                if let Some(instances) = instances_value.as_sequence() {
+                    for item in instances {
+                        Self::extract_from_yaml_object(item, config, &mut values)?;
+                    }
+                    return Ok(values);
+                }
+            }
+        }
+
+        // Fallback: Handle array of objects directly
+        if let Some(array) = yaml.as_sequence() {
+            for item in array {
+                Self::extract_from_yaml_object(item, config, &mut values)?;
+            }
+        }
+        // Handle single object with nested data
+        else if let Some(mapping) = yaml.as_mapping() {
+            // Look for common data keys
+            for (_, value) in mapping {
+                if let Some(array) = value.as_sequence() {
+                    for item in array {
+                        Self::extract_from_yaml_object(item, config, &mut values)?;
+                    }
+                }
+            }
+        }
+
+        Ok(values)
+    }
+
+    /// Extract key-value pair from a YAML object
+    fn extract_from_yaml_object(
+        obj: &serde_yaml::Value,
+        config: &InstanceConfig,
+        values: &mut HashMap<String, Vec<String>>,
+    ) -> Result<()> {
+        if let Some(obj_map) = obj.as_mapping() {
+            // Get key
+            let key_value = serde_yaml::Value::String(config.key_field.clone());
+            let key = obj_map
+                .get(&key_value)
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| {
+                    LinkMLError::data_validation(format!(
+                        "Key field '{}' not found or not a string",
+                        config.key_field
+                    ))
+                })?
+                .to_string();
+
+            // Get value (if value_field specified, otherwise use key)
+            let value = if let Some(value_field) = &config.value_field {
+                let value_key = serde_yaml::Value::String(value_field.clone());
+                obj_map
+                    .get(&value_key)
                     .and_then(|v| v.as_str())
                     .ok_or_else(|| {
                         LinkMLError::data_validation(format!(

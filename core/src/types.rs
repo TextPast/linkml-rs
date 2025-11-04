@@ -480,6 +480,16 @@ pub struct SlotDefinition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub structured_pattern: Option<StructuredPattern>,
 
+    /// Range type (e.g., "instance" for instance-based validation)
+    /// RootReal/Textpast extension for instance-based range constraints
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub range_type: Option<String>,
+
+    /// Range properties (e.g., ["id"] for instance ID field)
+    /// RootReal/Textpast extension for specifying which instance field to use
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub range_properties: Vec<String>,
+
     /// Annotations for the slot
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<Annotations>,

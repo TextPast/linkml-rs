@@ -592,6 +592,31 @@ name = "validate_country_schema"
 path = "examples/02_validation/iso3166/validate_country_schema.rs"
 required-features = []
 
+[[example]]
+name = "generate_all_artifacts"
+path = "examples/generate_all_artifacts.rs"
+required-features = []
+
+[[example]]
+name = "export_from_typedb"
+path = "examples/export_from_typedb.rs"
+required-features = []
+
+[[example]]
+name = "export_from_typedb_with_dbms"
+path = "examples/export_from_typedb_with_dbms.rs"
+required-features = []
+
+[[example]]
+name = "batch_export_from_typedb"
+path = "examples/batch_export_from_typedb.rs"
+required-features = []
+
+[[example]]
+name = "load_yaml_to_typedb"
+path = "examples/load_yaml_to_typedb.rs"
+required-features = []
+
 [[bin]]
 name = "linkml"
 path = "src/bin/linkml.rs"

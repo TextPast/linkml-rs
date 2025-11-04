@@ -185,6 +185,9 @@ pub mod validator;
 /// Code generation
 pub mod generator;
 
+/// TypeDB integration helper
+pub mod typedb_helper;
+
 /// Pattern matching with named captures
 pub mod pattern;
 

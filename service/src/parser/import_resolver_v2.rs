@@ -321,6 +321,7 @@ impl ImportResolverV2 {
 
         // Determine if this is a schema or instance import
         let is_schema = path_without_prefix.ends_with("/schema");
+        let is_instance = path_without_prefix.ends_with("/instance");
 
         // Try local file first
         // Use absolute path or search in current directory and parent directories
@@ -340,8 +341,12 @@ impl ImportResolverV2 {
             // Schema: remove /schema suffix from path for URL
             let schema_path = path_without_prefix.strip_suffix("/schema").unwrap_or(path_without_prefix);
             format!("https://textpast.org/schema/{}", schema_path)
+        } else if is_instance {
+            // Instance: remove /instance suffix from path for URL
+            let instance_path = path_without_prefix.strip_suffix("/instance").unwrap_or(path_without_prefix);
+            format!("https://textpast.org/instance/{}", instance_path)
         } else {
-            // Instance
+            // Unknown type - try as-is
             format!("https://textpast.org/instance/{}", path_without_prefix)
         };
 
@@ -482,8 +487,19 @@ impl ImportResolverV2 {
     /// Walks up from the current directory to find the repository root (identified by
     /// Cargo.toml with [workspace]), then looks for the schema file in
     /// crates/model/symbolic/schemata/
+    ///
+    /// Handles both schema and instance imports:
+    /// - txp:path/to/module/schema → path/to/module/schema.yaml
+    /// - txp:path/to/module/instance → path/to/module.yaml (strips /instance suffix)
     fn find_local_schema_file(&self, path_without_prefix: &str) -> Result<Option<PathBuf>> {
-        let schema_file = format!("{}.yaml", path_without_prefix);
+        // Handle instance imports: strip /instance suffix for file path
+        let file_path = if path_without_prefix.ends_with("/instance") {
+            path_without_prefix.strip_suffix("/instance").unwrap_or(path_without_prefix)
+        } else {
+            path_without_prefix
+        };
+
+        let schema_file = format!("{}.yaml", file_path);
 
         // Get current directory
         let mut current_dir = std::env::current_dir()

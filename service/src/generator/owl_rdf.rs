@@ -667,7 +667,7 @@ impl RdfGenerator {
 
         // Remove duplicates while preserving order
         let mut seen = std::collections::HashSet::new();
-        all_slots.retain(|slot| seen.insert(slot.clone());
+        all_slots.retain(|slot| seen.insert(slot.clone()));
 
         all_slots
     }
@@ -815,6 +815,14 @@ impl Generator for RdfGenerator {
             RdfFormat::RdfXml => vec![".rdf", ".owl"],
             RdfFormat::NTriples => vec![".nt"],
             RdfFormat::JsonLd => vec![".jsonld"]}
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Basic validation - ensure schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation("Schema must have a name"));
+        }
+        Ok(())
     }
 
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
