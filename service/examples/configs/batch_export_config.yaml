@@ -1,0 +1,119 @@
+# Batch Export Configuration for TypeDB → All Formats
+# This configuration maps TypeDB types to LinkML classes and specifies export settings
+
+database: rootreal
+output_base_dir: crates/model/symbolic/schemata/
+
+# TypeDB connection settings
+typedb:
+  server: localhost
+  port: 1729
+  timeout_seconds: 30
+
+# Export settings
+export:
+  # Formats to generate
+  formats:
+    - rdf_xml    # RDF/XML format (.rdf)
+    - turtle     # Turtle format (.ttl)
+    - owl        # OWL ontology (.owl)
+    - json       # JSON format (.json)
+    - yaml       # YAML format (.yaml)
+  
+  # Performance settings
+  batch_size: 1000
+  parallel_exports: 4
+  include_inferred: true
+  
+  # Backup settings
+  create_backup: true
+  backup_before_export: true
+  backup_retention_days: 30
+
+# Class mappings: TypeDB type → LinkML class
+classes:
+  # Language schemas
+  - name: "ISO 639-3 Languages"
+    typedb_type: translation
+    linkml_class: Translation
+    schema: language/iso_639-3/schema.yaml
+    output: language/iso_639-3/data/
+    enabled: true
+    
+  - name: "ISO 639-2 Languages"
+    typedb_type: iso639_2_entity
+    linkml_class: ISO639_2Entity
+    schema: language/iso_639-2/schema.yaml
+    output: language/iso_639-2/data/
+    enabled: true
+    
+  - name: "ISO 15924 Scripts"
+    typedb_type: script
+    linkml_class: Script
+    schema: language/iso_15924/schema.yaml
+    output: language/iso_15924/data/
+    enabled: true
+  
+  # Place schemas
+  - name: "ISO 3166 Countries"
+    typedb_type: iso3166entity
+    linkml_class: ISO3166Entity
+    schema: place/polity/country/schema.yaml
+    output: place/polity/country/data/
+    enabled: true
+  
+  # Time schemas
+  - name: "Timezones"
+    typedb_type: timezone
+    linkml_class: Timezone
+    schema: time/timezone/schema.yaml
+    output: time/timezone/data/
+    enabled: true
+  
+  # Quantity schemas
+  - name: "Units"
+    typedb_type: unit
+    linkml_class: Unit
+    schema: quantity/unit/schema.yaml
+    output: quantity/unit/data/
+    enabled: true
+  
+  # Meta schemas
+  - name: "Document Parsers"
+    typedb_type: document_parser
+    linkml_class: DocumentParser
+    schema: meta/document/document_parser/schema.yaml
+    output: meta/document/document_parser/data/
+    enabled: true
+
+# Backup configuration
+backup:
+  enabled: true
+  backup_directory: backups/linkml_exports
+  backup_type: incremental  # full, incremental, differential
+  compression: zstd          # none, zstd, lz4
+  encryption: none           # none, aes256, chacha20
+  retention_policy:
+    max_backups: 10
+    max_age_days: 30
+    min_backups: 3
+
+# Logging and monitoring
+logging:
+  level: info
+  log_file: logs/batch_export.log
+  console_output: true
+  
+monitoring:
+  enable_progress: true
+  progress_interval_seconds: 5
+  enable_metrics: true
+  metrics_port: 9090
+
+# Error handling
+error_handling:
+  continue_on_error: true
+  max_retries: 3
+  retry_delay_seconds: 5
+  fail_fast: false
+

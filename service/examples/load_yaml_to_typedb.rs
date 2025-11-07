@@ -5,7 +5,7 @@
 //!
 //! Usage:
 //!   cargo run --example load_yaml_to_typedb -- \
-//!     --config batch_export_config.yaml \
+//!     --config crates/model/symbolic/linkml/service/examples/configs/batch_export_config.yaml \
 //!     --database rootreal_test
 
 use clap::Parser;
@@ -23,7 +23,7 @@ use std::time::Instant;
 #[command(about = "Load YAML instance data into TypeDB", long_about = None)]
 struct Args {
     /// Path to batch export configuration file
-    #[arg(short, long, default_value = "batch_export_config.yaml")]
+    #[arg(short, long, default_value = "crates/model/symbolic/linkml/service/examples/configs/batch_export_config.yaml")]
     config: PathBuf,
 
     /// TypeDB database name (will be created if doesn't exist)

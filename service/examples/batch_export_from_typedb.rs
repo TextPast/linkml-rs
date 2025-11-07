@@ -4,7 +4,7 @@
 //! to all formats (RDF/OWL/Turtle/YAML/JSON) with progress reporting and backup support.
 //!
 //! Usage:
-//!   cargo run --example batch_export_from_typedb -- --config batch_export_config.yaml
+//!   cargo run --example batch_export_from_typedb -- --config crates/model/symbolic/linkml/service/examples/configs/batch_export_config.yaml
 
 use clap::Parser;
 use linkml_core::types::SchemaDefinition;
@@ -26,7 +26,7 @@ use tokio::sync::Semaphore;
 #[command(about = "Batch export from TypeDB to all formats", long_about = None)]
 struct Args {
     /// Path to configuration file
-    #[arg(short, long, default_value = "batch_export_config.yaml")]
+    #[arg(short, long, default_value = "crates/model/symbolic/linkml/service/examples/configs/batch_export_config.yaml")]
     config: PathBuf,
 
     /// Dry run (don't actually export)
