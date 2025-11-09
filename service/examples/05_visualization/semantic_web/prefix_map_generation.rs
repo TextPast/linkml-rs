@@ -3,7 +3,7 @@
 use linkml_service::generator::{
     Generator, PrefixMapFormat, PrefixMapGenerator, PrefixMapGeneratorConfig,
 };
-use linkml_service::parser::YamlParser;
+use linkml_service::parser::{Parser, SchemaParser};
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -119,8 +119,8 @@ classes:
 "#;
 
     // Parse the schema
-    let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
+    let parser = Parser::new();
+    let schema = parser.parse_str(schema_yaml, "yaml")?;
 
     println!(
         "Generating prefix maps in various formats...

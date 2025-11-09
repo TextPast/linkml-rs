@@ -4,7 +4,7 @@ use linkml_core::{
     metadata::{Contributor, Example},
     types::{SchemaDefinition, SlotDefinition},
 };
-use linkml_service::parser::{SchemaParser, YamlParser};
+use linkml_service::parser::{Parser, SchemaParser};
 use linkml_core::types::SchemaDefinition;
 use linkml_core::types::{SlotDefinition};
 
@@ -39,9 +39,9 @@ classes:
     name: Person
 "#;
 
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let schema = parser
-        .parse(yaml_content)
+        .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
 
     // Check basic metadata
@@ -90,9 +90,9 @@ classes:
       - value: "survey_responses_2023"
 "#;
 
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let schema = parser
-        .parse(yaml_content)
+        .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
 
     let dataset_class = schema
@@ -157,9 +157,9 @@ slots:
     rank: 10
 "#;
 
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let schema = parser
-        .parse(yaml_content)
+        .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
 
     let email_slot = schema.slots.get("email").expect("Test operation failed");

@@ -6,7 +6,7 @@ use linkml_core::{
     types::{ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition, TypeDefinition},
 };
 use linkml_service::inheritance::resolver::InheritanceResolver;
-use linkml_service::parser::{SchemaParser, yaml_parser::YamlParser};
+use linkml_service::parser::{Parser, SchemaParser};
 use serde_json::json;
 
 #[test]
@@ -224,8 +224,8 @@ slots:
         maxLength: 100
 "#;
 
-    let parser = YamlParser::new();
-    let schema = parser.parse(yaml).expect("Test operation failed");
+    let parser = Parser::new();
+    let schema = parser.parse_str(yaml, "yaml").expect("Test operation failed");
 
     // Check schema annotations
     assert_eq!(

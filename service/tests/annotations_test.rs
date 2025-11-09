@@ -4,7 +4,7 @@ use linkml_core::{
     annotations::{Annotatable, AnnotationValue, Annotations},
     types::{ClassDefinition, SchemaDefinition, SlotDefinition},
 };
-use linkml_service::parser::{SchemaParser, YamlParser};
+use linkml_service::parser::{Parser, SchemaParser};
 use linkml_core::types::SchemaDefinition;
 use linkml_core::types::{ClassDefinition, SlotDefinition};
 
@@ -103,9 +103,9 @@ slots:
       ui:widget: email-input
 "#;
 
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let schema = parser
-        .parse(yaml_content)
+        .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
 
     // Check schema annotations
@@ -171,9 +171,9 @@ classes:
           max_size: 1000000
 "#;
 
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let schema = parser
-        .parse(yaml_content)
+        .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
 
     let dataset_class = schema

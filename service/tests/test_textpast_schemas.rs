@@ -9,7 +9,7 @@
 
 #![allow(missing_docs)]
 
-use linkml_service::parser::{SchemaLoader, SchemaParser, YamlParser};
+use linkml_service::parser::{Parser, SchemaLoader, SchemaParser};
 use std::path::PathBuf;
 
 /// Helper function to get the repository root path
@@ -159,12 +159,12 @@ fn test_iso3166_identifier_validation() {
 
 #[test]
 fn test_slot_usage_scoped_imports() {
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
     let content = std::fs::read_to_string(&path)
         .expect("Failed to read country schema");
 
-    let schema = parser.parse_str(&content).expect("Failed to parse schema");
+    let schema = parser.parse_str(&content, "yaml").expect("Failed to parse schema");
     let iso_class = &schema.classes["ISO3166Entity"];
 
     // Check that identifier slot usage has proper configuration
@@ -209,7 +209,7 @@ fn test_all_schemas_parse_successfully() {
         "crates/model/symbolic/schemata/place/polity/country/schema.yaml",
     ];
 
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let repo_root = get_repo_root();
 
     for path_str in schema_paths {
@@ -217,7 +217,7 @@ fn test_all_schemas_parse_successfully() {
         let content = std::fs::read_to_string(&path)
             .unwrap_or_else(|_| panic!("Failed to read schema: {}", path_str));
 
-        let schema = parser.parse_str(&content)
+        let schema = parser.parse_str(&content, "yaml")
             .unwrap_or_else(|_| panic!("Failed to parse schema: {}", path_str));
 
         // Verify basic schema structure
@@ -231,12 +231,12 @@ fn test_all_schemas_parse_successfully() {
 #[test]
 fn test_schema_metadata_conventions() {
     // Test that schemas follow the new metadata conventions
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
     let content = std::fs::read_to_string(&path)
         .expect("Failed to read country schema");
 
-    let schema = parser.parse_str(&content).expect("Failed to parse schema");
+    let schema = parser.parse_str(&content, "yaml").expect("Failed to parse schema");
 
     // Check required metadata fields
     assert_eq!(schema.id, "https://textpast.org/schema/place/polity/country");

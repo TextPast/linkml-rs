@@ -13,6 +13,7 @@ use linkml_core::{
     settings::{ImportResolutionStrategy, ImportSettings},
     types::{ClassDefinition, SchemaDefinition, SlotDefinition},
 };
+use parse_core::ParseService;
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::future::Future;
@@ -49,7 +50,7 @@ impl From<String> for ImportSpec {
 }
 
 /// Enhanced import resolver with advanced capabilities
-pub struct ImportResolverV2 {
+pub struct ImportResolverV2<P: ParseService> {
     /// Cache of resolved schemas
     cache: Arc<RwLock<HashMap<String, SchemaDefinition>>>,
     /// Import settings from schema
@@ -60,60 +61,64 @@ pub struct ImportResolverV2 {
     fallback_client: reqwest::Client,
     /// Visited imports for circular dependency detection
     visited_stack: Arc<RwLock<Vec<String>>>,
+    /// Parse service for schema parsing
+    parse_service: Arc<P>,
 }
 
-impl Default for ImportResolverV2 {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl ImportResolverV2 {
+impl<P: ParseService> ImportResolverV2<P> {
     /// Create a new import resolver with default settings
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(parse_service: Arc<P>) -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(ImportSettings::default())),
             http_client: None,
             fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
+            parse_service,
         }
     }
 
     /// Create with schema settings
     #[must_use]
-    pub fn with_settings(settings: ImportSettings) -> Self {
+    pub fn with_settings(parse_service: Arc<P>, settings: ImportSettings) -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(settings)),
             http_client: None,
             fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
+            parse_service,
         }
     }
 
     /// Create with external API HTTP client (production-ready with rate limiting, caching, retries)
     #[must_use]
-    pub fn with_http_client(http_client: Arc<dyn HttpClient>) -> Self {
+    pub fn with_http_client(parse_service: Arc<P>, http_client: Arc<dyn HttpClient>) -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(ImportSettings::default())),
             http_client: Some(http_client),
             fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
+            parse_service,
         }
     }
 
     /// Create with both settings and HTTP client
     #[must_use]
-    pub fn with_settings_and_client(settings: ImportSettings, http_client: Arc<dyn HttpClient>) -> Self {
+    pub fn with_settings_and_client(
+        parse_service: Arc<P>,
+        settings: ImportSettings,
+        http_client: Arc<dyn HttpClient>,
+    ) -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(settings)),
             http_client: Some(http_client),
             fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
+            parse_service,
         }
     }
 
@@ -333,7 +338,7 @@ impl ImportResolverV2 {
                 .await
                 .map_err(|e| LinkMLError::import(txp_path, format!("Failed to read local file: {e}")))?;
 
-            return Self::parse_schema_content(&content, txp_path);
+            return self.parse_schema_content(&content, txp_path).await;
         }
 
         // Fall back to remote URL
@@ -432,7 +437,7 @@ impl ImportResolverV2 {
         };
 
         // Parse based on URL extension
-        Self::parse_schema_content(&content, &final_url)
+        self.parse_schema_content(&content, &final_url).await
     }
 
     /// Load schema from file
@@ -443,7 +448,7 @@ impl ImportResolverV2 {
             .await
             .map_err(|e| LinkMLError::import(path, format!("Failed to read file: {e}")))?;
 
-        Self::parse_schema_content(&content, path)
+        self.parse_schema_content(&content, path).await
     }
 
     /// Resolve file path using search paths and resolution strategy
@@ -568,18 +573,19 @@ impl ImportResolverV2 {
     }
 
     /// Parse schema content based on format
-    fn parse_schema_content(content: &str, source: &str) -> Result<SchemaDefinition> {
-        use crate::parser::{JsonParser, SchemaParser, YamlParser};
+    async fn parse_schema_content(&self, content: &str, source: &str) -> Result<SchemaDefinition> {
+        use crate::parser::Parser;
 
         // Determine format from extension (case-insensitive)
-        if source.to_lowercase().ends_with(".json") {
-            let parser = JsonParser::new();
-            parser.parse_str(content)
+        let format = if source.to_lowercase().ends_with(".json") {
+            "json"
         } else {
             // Default to YAML
-            let parser = YamlParser::new();
-            parser.parse_str(content)
-        }
+            "yaml"
+        };
+
+        let parser = Parser::new(self.parse_service.clone());
+        parser.parse_str(content, format).await
     }
 
     /// Merge imported schema into target schema
@@ -731,7 +737,7 @@ impl ImportResolverV2 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::{SchemaParser, YamlParser};
+    use crate::parser::{Parser, SchemaParser};
     use tempfile::TempDir;
 
     #[tokio::test]
@@ -799,10 +805,10 @@ classes:
 "#;
 
         // Parse and resolve
-        use crate::parser::{SchemaParser, YamlParser};
-        let parser = YamlParser::new();
+        use crate::parser::{Parser, SchemaParser};
+        let parser = Parser::new();
         let mut schema = parser
-            .parse_str(main_schema)
+            .parse_str(main_schema, "yaml")
             .expect("should parse main schema: {}");
 
         // Set base path for resolver
@@ -865,9 +871,9 @@ imports:
             .expect("should write schema b: {}");
 
         // Try to resolve - should fail
-        let parser = YamlParser::new();
+        let parser = Parser::new();
         let schema = parser
-            .parse_str(schema_a)
+            .parse_str(schema_a, "yaml")
             .expect("should parse schema a: {}");
 
         let settings = ImportSettings {

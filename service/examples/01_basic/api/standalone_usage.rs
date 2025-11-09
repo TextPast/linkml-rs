@@ -8,13 +8,17 @@ use linkml_service::{
     generator::{
         GeneratorOptions, RustGenerator, TypeQLGenerator, typeql_generator::create_typeql_generator,
     },
-    parser::YamlParser,
+    parser::{Parser, SchemaParser},
     validator::{ValidationReport, Validator},
 };
+use logger_service::wiring::wire_testing_logger;
+use parse_service::NoLinkML;
 use serde_json::json;
 use std::error::Error;
+use std::sync::Arc;
 
-fn main() -> std::result::Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> std::result::Result<(), Box<dyn Error>> {
     println!(
         "LinkML Standalone Usage Example
 "
@@ -94,8 +98,14 @@ classes:
 
     // Parse the schema
     println!("1. Parsing LinkML schema...");
-    let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
+    
+    // Wire ParseService
+    let logger = wire_testing_logger()?.into_arc();
+    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
+    let parse_service = parse_service_handle.into_arc();
+    
+    let parser = Parser::new(parse_service);
+    let schema = parser.parse_str(schema_yaml, "yaml").await?;
     println!("   ✓ Schema parsed successfully: {}", schema.name.as_ref()?);
 
     // Create test data

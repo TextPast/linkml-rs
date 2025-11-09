@@ -14,6 +14,8 @@ use futures::stream::{self, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use linkml_core::prelude::*;
 use linkml_service::prelude::*;
+use logger_service::wiring::wire_testing_logger;
+use parse_service::NoLinkML;
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
@@ -105,8 +107,14 @@ enums:
       suspended:
       vip:
 "#;
-    let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
+    
+    // Wire ParseService
+    let logger = wire_testing_logger()?.into_arc();
+    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
+    let parse_service = parse_service_handle.into_arc();
+    
+    let parser = Parser::new(parse_service);
+    let schema = parser.parse_str(schema_yaml, "yaml").await?;
     let service = create_example_service().await?;
     println!("Example 1: Simple Batch Validation");
     println!("---------------------------------");

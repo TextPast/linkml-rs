@@ -256,6 +256,11 @@ pub fn merge_slot_definitions(
         } else {
             override_def.range_properties.clone()
         },
+        imports: if override_def.imports.is_empty() {
+            base.imports.clone()
+        } else {
+            override_def.imports.clone()
+        },
         annotations: crate::annotations::merge_annotations(
             base.annotations.as_ref(),
             override_def.annotations.as_ref(),

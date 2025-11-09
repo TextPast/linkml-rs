@@ -5,7 +5,7 @@ use linkml_core::types::SchemaDefinition;
 use linkml_service::generator::python_dataclass::PythonDataclassGenerator;
 use linkml_service::generator::traits::Generator;
 use linkml_service::generator::typescript::TypeScriptGenerator;
-use linkml_service::parser::{SchemaParser, yaml_parser::YamlParser};
+use linkml_service::parser::{Parser, SchemaParser};
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::fmt::Display;
@@ -213,9 +213,9 @@ types:
     description: Date in ISO 8601 format
 "#;
 
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     require_ok(
-        parser.parse_str(schema_yaml),
+        parser.parse_str(schema_yaml, "yaml"),
         "Failed to parse benchmark schema",
     )
 }
@@ -284,9 +284,9 @@ types:
 
     c.bench_function("schema_parsing_simple", |b| {
         b.iter(|| {
-            let parser = YamlParser::new();
+            let parser = Parser::new();
             let schema = require_ok(
-                parser.parse_str(schema_yaml),
+                parser.parse_str(schema_yaml, "yaml"),
                 "Schema parsing benchmark should succeed",
             );
             black_box(schema)
@@ -301,9 +301,9 @@ types:
 
     c.bench_function("schema_parsing_complex", |b| {
         b.iter(|| {
-            let parser = YamlParser::new();
+            let parser = Parser::new();
             let schema = require_ok(
-                parser.parse_str(&complex_yaml),
+                parser.parse_str(&complex_yaml, "yaml"),
                 "Complex schema parsing should succeed",
             );
             black_box(schema)

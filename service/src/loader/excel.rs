@@ -572,46 +572,5 @@ mod tests {
     }
 
     // Mock implementations for testing
-    use async_trait::async_trait;
-
-    struct MockLogger;
-    #[async_trait]
-    impl LoggerService for MockLogger {
-        type Error = LoggerError;
-
-        async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-        async fn info(&self, _message: &str) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-        async fn warn(&self, _message: &str) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-        async fn error(&self, _message: &str) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-        async fn log(
-            &self,
-            _level: LogLevel,
-            _message: &str,
-        ) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-        async fn log_entry(
-            &self,
-            _entry: &logger_core::LogEntry,
-        ) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-        async fn set_level(&self, _level: LogLevel) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-        async fn flush(&self) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-        async fn shutdown(&self) -> std::result::Result<(), Self::Error> {
-            Ok(())
-        }
-    }
+    use testing_mocks::MockLoggerService as MockLogger;
 }

@@ -4,6 +4,7 @@
 //! LinkML schemas into TypeDB schemas with exceptional performance.
 
 use linkml_core::prelude::*;
+use linkml_service::parser::{Parser, SchemaParser};
 use linkml_service::generator::{
     Generator,
     GeneratorOptions,
@@ -58,8 +59,8 @@ slots:
     range: integer
 "#;
 
-    let parser = YamlParser::new();
-    let schema = parser.parse_str(simple_schema)?;
+    let parser = Parser::new();
+    let schema = parser.parse_str(simple_schema, "yaml")?;
 
     // Generate TypeQL using the factory function
     let generator = create_enhanced_typeql_generator();
@@ -150,7 +151,7 @@ slots:
     range: datetime
 "#;
 
-    let relation_schema = parser.parse_str(relation_schema)?;
+    let relation_schema = parser.parse_str(relation_schema, "yaml")?;
 
     println!(
         "
@@ -208,7 +209,7 @@ enums:
         description: Document is published
 "#;
 
-    let rule_schema = parser.parse_str(rule_schema)?;
+    let rule_schema = parser.parse_str(rule_schema, "yaml")?;
 
     println!(
         "

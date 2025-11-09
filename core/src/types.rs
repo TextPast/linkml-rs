@@ -490,6 +490,12 @@ pub struct SlotDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub range_properties: Vec<String>,
 
+    /// Imports for scoped slot import resolution (used in slot_usage context)
+    /// RootReal/Textpast extension for disambiguating range types when multiple imports define same class name
+    /// When specified, only search these imports for the range type. When empty, search all schema imports.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub imports: Vec<String>,
+
     /// Annotations for the slot
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<Annotations>,

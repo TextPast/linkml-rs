@@ -1,7 +1,7 @@
 //! Performance benchmarks for LinkML parsing and schema operations
 
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use linkml_service::parser::{JsonParser, SchemaParser, YamlParser};
+use linkml_service::parser::{Parser, SchemaParser};
 use linkml_service::schema_view::SchemaView;
 use linkml_service::transform::schema_merger::SchemaMerger;
 use std::fmt::Display;
@@ -228,28 +228,28 @@ slots:
 }
 
 fn bench_yaml_parsing(c: &mut Criterion) {
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let large_schema = generate_large_yaml_schema();
 
     let mut group = c.benchmark_group("yaml_parsing");
 
     group.bench_function("small", |b| {
         b.iter(|| {
-            let result = parser.parse(black_box(SMALL_YAML_SCHEMA));
+            let result = parser.parse_str(black_box(SMALL_YAML_SCHEMA), "yaml");
             assert!(result.is_ok());
         })
     });
 
     group.bench_function("medium", |b| {
         b.iter(|| {
-            let result = parser.parse(black_box(MEDIUM_YAML_SCHEMA));
+            let result = parser.parse_str(black_box(MEDIUM_YAML_SCHEMA), "yaml");
             assert!(result.is_ok());
         })
     });
 
     group.bench_function("large", |b| {
         b.iter(|| {
-            let result = parser.parse(black_box(&large_schema));
+            let result = parser.parse_str(black_box(&large_schema), "yaml");
             assert!(result.is_ok());
         })
     });
@@ -258,12 +258,11 @@ fn bench_yaml_parsing(c: &mut Criterion) {
 }
 
 fn bench_json_parsing(c: &mut Criterion) {
-    let yaml_parser = YamlParser::new();
-    let json_parser = JsonParser::new();
+    let parser = Parser::new();
 
     // Convert YAML schemas to JSON
     let small_schema = require_ok(
-        yaml_parser.parse(SMALL_YAML_SCHEMA),
+        parser.parse_str(SMALL_YAML_SCHEMA, "yaml"),
         "Failed to parse small YAML schema",
     );
     let small_json = require_ok(
@@ -272,7 +271,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     );
 
     let medium_schema = require_ok(
-        yaml_parser.parse(MEDIUM_YAML_SCHEMA),
+        parser.parse_str(MEDIUM_YAML_SCHEMA, "yaml"),
         "Failed to parse medium YAML schema",
     );
     let medium_json = require_ok(
@@ -282,7 +281,7 @@ fn bench_json_parsing(c: &mut Criterion) {
 
     let large_yaml = generate_large_yaml_schema();
     let large_schema = require_ok(
-        yaml_parser.parse(&large_yaml),
+        parser.parse_str(&large_yaml, "yaml"),
         "Failed to parse generated large YAML schema",
     );
     let large_json = require_ok(
@@ -294,21 +293,21 @@ fn bench_json_parsing(c: &mut Criterion) {
 
     group.bench_function("small", |b| {
         b.iter(|| {
-            let result = json_parser.parse_str(black_box(&small_json));
+            let result = parser.parse_str(black_box(&small_json), "json");
             assert!(result.is_ok());
         })
     });
 
     group.bench_function("medium", |b| {
         b.iter(|| {
-            let result = json_parser.parse_str(black_box(&medium_json));
+            let result = parser.parse_str(black_box(&medium_json), "json");
             assert!(result.is_ok());
         })
     });
 
     group.bench_function("large", |b| {
         b.iter(|| {
-            let result = json_parser.parse_str(black_box(&large_json));
+            let result = parser.parse_str(black_box(&large_json), "json");
             assert!(result.is_ok());
         })
     });
@@ -317,18 +316,18 @@ fn bench_json_parsing(c: &mut Criterion) {
 }
 
 fn bench_inheritance_resolution(c: &mut Criterion) {
-    let parser = YamlParser::new();
+    let parser = Parser::new();
 
     let small_schema = require_ok(
-        parser.parse(SMALL_YAML_SCHEMA),
+        parser.parse_str(SMALL_YAML_SCHEMA, "yaml"),
         "Failed to parse small schema for inheritance resolution",
     );
     let medium_schema = require_ok(
-        parser.parse(MEDIUM_YAML_SCHEMA),
+        parser.parse_str(MEDIUM_YAML_SCHEMA, "yaml"),
         "Failed to parse medium schema for inheritance resolution",
     );
     let large_schema = require_ok(
-        parser.parse(&generate_large_yaml_schema()),
+        parser.parse_str(&generate_large_yaml_schema(), "yaml"),
         "Failed to parse large schema for inheritance resolution",
     );
 
@@ -368,13 +367,13 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
 }
 
 fn bench_schema_view_operations(c: &mut Criterion) {
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let medium_schema = require_ok(
-        parser.parse(MEDIUM_YAML_SCHEMA),
+        parser.parse_str(MEDIUM_YAML_SCHEMA, "yaml"),
         "Failed to parse medium schema for schema view benchmarks",
     );
     let large_schema = require_ok(
-        parser.parse(&generate_large_yaml_schema()),
+        parser.parse_str(&generate_large_yaml_schema(), "yaml"),
         "Failed to parse large schema for schema view benchmarks",
     );
 
@@ -474,15 +473,15 @@ fn bench_schema_view_operations(c: &mut Criterion) {
 }
 
 fn bench_schema_merging(c: &mut Criterion) {
-    let parser = YamlParser::new();
+    let parser = Parser::new();
     let mut merger = SchemaMerger::with_defaults();
 
     let schema1 = require_ok(
-        parser.parse(SMALL_YAML_SCHEMA),
+        parser.parse_str(SMALL_YAML_SCHEMA, "yaml"),
         "Failed to parse first schema for merge benchmark",
     );
     let schema2 = require_ok(
-        parser.parse(MEDIUM_YAML_SCHEMA),
+        parser.parse_str(MEDIUM_YAML_SCHEMA, "yaml"),
         "Failed to parse second schema for merge benchmark",
     );
 
@@ -495,12 +494,11 @@ fn bench_schema_merging(c: &mut Criterion) {
 }
 
 fn bench_parsing_comparison(c: &mut Criterion) {
-    let yaml_parser = YamlParser::new();
-    let json_parser = JsonParser::new();
+    let parser = Parser::new();
 
     let yaml_content = MEDIUM_YAML_SCHEMA;
     let schema = require_ok(
-        yaml_parser.parse(yaml_content),
+        parser.parse_str(yaml_content, "yaml"),
         "Failed to parse medium schema for comparison benchmark",
     );
     let json_content = require_ok(
@@ -512,14 +510,14 @@ fn bench_parsing_comparison(c: &mut Criterion) {
 
     group.bench_function("yaml", |b| {
         b.iter(|| {
-            let result = yaml_parser.parse(black_box(yaml_content));
+            let result = parser.parse_str(black_box(yaml_content), "yaml");
             assert!(result.is_ok());
         })
     });
 
     group.bench_function("json", |b| {
         b.iter(|| {
-            let result = json_parser.parse_str(black_box(&json_content));
+            let result = parser.parse_str(black_box(&json_content), "json");
             assert!(result.is_ok());
         })
     });

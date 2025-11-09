@@ -1,0 +1,629 @@
+// LinkML YAML Grammar for Pest Parser
+// This grammar defines the syntax for LinkML schemas in YAML format
+// Reference: https://linkml.io/linkml-model/latest/docs/SchemaDefinition/
+
+// ============================================================================
+// Top-Level Schema Structure
+// ============================================================================
+
+schema = {
+    SOI ~
+    (schema_field | NEWLINE | WHITESPACE | comment)*~
+    EOI
+}
+
+schema_field = {
+    schema_metadata
+    | schema_id
+    | schema_name
+    | schema_title
+    | schema_description
+    | schema_version
+    | schema_license
+    | schema_created_on
+    | schema_last_updated_on
+    | schema_default_prefix
+    | schema_default_range
+    | schema_prefixes
+    | schema_imports
+    | schema_settings
+    | schema_classes
+    | schema_slots
+    | schema_types
+    | schema_enums
+    | schema_subsets
+    | schema_contributors
+    | schema_status
+    | schema_categories
+    | schema_keywords
+    | schema_see_also
+    | schema_metamodel_version
+    | schema_source_file
+    | schema_generation_date
+    | schema_annotations
+}
+
+// ============================================================================
+// Schema-Level Fields
+// ============================================================================
+
+schema_id = { "id" ~ ":" ~ WHITESPACE* ~ uri }
+schema_name = { "name" ~ ":" ~ WHITESPACE* ~ identifier }
+schema_title = { "title" ~ ":" ~ WHITESPACE* ~ string_value }
+schema_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | string_value) }
+schema_version = { "version" ~ ":" ~ WHITESPACE* ~ string_value }
+schema_license = { "license" ~ ":" ~ WHITESPACE* ~ string_value }
+schema_created_on = { "created_on" ~ ":" ~ WHITESPACE* ~ timestamp }
+schema_last_updated_on = { "last_updated_on" ~ ":" ~ WHITESPACE* ~ timestamp }
+schema_default_prefix = { "default_prefix" ~ ":" ~ WHITESPACE* ~ identifier }
+schema_default_range = { "default_range" ~ ":" ~ WHITESPACE* ~ identifier }
+schema_metamodel_version = { "metamodel_version" ~ ":" ~ WHITESPACE* ~ string_value }
+schema_source_file = { "source_file" ~ ":" ~ WHITESPACE* ~ string_value }
+schema_generation_date = { "generation_date" ~ ":" ~ WHITESPACE* ~ timestamp }
+schema_status = { "status" ~ ":" ~ WHITESPACE* ~ string_value }
+
+// ============================================================================
+// Prefixes
+// ============================================================================
+
+schema_prefixes = {
+    "prefixes" ~ ":" ~ NEWLINE ~
+    INDENT ~ prefix_entry+ ~ DEDENT?
+}
+
+prefix_entry = {
+    identifier ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE
+}
+
+// ============================================================================
+// Imports
+// ============================================================================
+
+schema_imports = {
+    "imports" ~ ":" ~ NEWLINE ~
+    INDENT ~ import_entry+ ~ DEDENT?
+}
+
+import_entry = {
+    "-" ~ WHITESPACE* ~ (uri | identifier) ~ NEWLINE
+}
+
+// ============================================================================
+// Settings (Pattern Definitions)
+// ============================================================================
+
+schema_settings = {
+    "settings" ~ ":" ~ NEWLINE ~
+    INDENT ~ setting_entry+ ~ DEDENT?
+}
+
+setting_entry = {
+    identifier ~ ":" ~ WHITESPACE* ~ (pattern_value | string_value) ~ NEWLINE
+}
+
+pattern_value = { (!NEWLINE ~ ANY)+ }
+
+// ============================================================================
+// Classes
+// ============================================================================
+
+schema_classes = {
+    "classes" ~ ":" ~ NEWLINE ~
+    INDENT ~ class_definition+ ~ DEDENT?
+}
+
+class_definition = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ class_field+ ~ DEDENT?
+}
+
+class_field = {
+    class_description
+    | class_is_a
+    | class_abstract
+    | class_mixin
+    | class_mixins
+    | class_slots
+    | class_slot_usage
+    | class_attributes
+    | class_class_uri
+    | class_subclass_of
+    | class_tree_root
+    | class_rules
+    | class_if_required
+    | class_unique_keys
+    | class_annotations
+    | class_recursion_options
+    | class_aliases
+    | class_see_also
+    | class_id_prefixes
+    | class_broad_mappings
+    | class_exact_mappings
+    | class_narrow_mappings
+    | class_related_mappings
+    | class_close_mappings
+}
+
+class_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | string_value) }
+class_is_a = { "is_a" ~ ":" ~ WHITESPACE* ~ identifier ~ NEWLINE }
+class_abstract = { "abstract" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+class_mixin = { "mixin" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+class_tree_root = { "tree_root" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+class_class_uri = { "class_uri" ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE }
+
+class_mixins = {
+    "mixins" ~ ":" ~ NEWLINE ~
+    INDENT ~ mixin_entry+ ~ DEDENT?
+}
+
+mixin_entry = {
+    "-" ~ WHITESPACE* ~ identifier ~ NEWLINE
+}
+
+class_slots = {
+    "slots" ~ ":" ~ NEWLINE ~
+    INDENT ~ slot_ref_entry+ ~ DEDENT?
+}
+
+slot_ref_entry = {
+    "-" ~ WHITESPACE* ~ identifier ~ NEWLINE
+}
+
+class_subclass_of = {
+    "subclass_of" ~ ":" ~ NEWLINE ~
+    INDENT ~ subclass_entry+ ~ DEDENT?
+}
+
+subclass_entry = {
+    "-" ~ WHITESPACE* ~ uri ~ NEWLINE
+}
+
+// Slot Usage (overrides for inherited slots)
+class_slot_usage = {
+    "slot_usage" ~ ":" ~ NEWLINE ~
+    INDENT ~ slot_usage_entry+ ~ DEDENT?
+}
+
+slot_usage_entry = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ slot_field+ ~ DEDENT?
+}
+
+// Attributes (inline slot definitions)
+class_attributes = {
+    "attributes" ~ ":" ~ NEWLINE ~
+    INDENT ~ attribute_entry+ ~ DEDENT?
+}
+
+attribute_entry = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ slot_field+ ~ DEDENT?
+}
+
+// Class Rules
+class_rules = {
+    "rules" ~ ":" ~ NEWLINE ~
+    INDENT ~ rule_entry+ ~ DEDENT?
+}
+
+rule_entry = {
+    "-" ~ WHITESPACE* ~ "preconditions" ~ ":" ~ NEWLINE ~
+    INDENT ~ precondition+ ~ DEDENT? ~
+    WHITESPACE* ~ "postconditions" ~ ":" ~ NEWLINE ~
+    INDENT ~ postcondition+ ~ DEDENT?
+}
+
+precondition = {
+    identifier ~ ":" ~ WHITESPACE* ~ expression ~ NEWLINE
+}
+
+postcondition = {
+    identifier ~ ":" ~ WHITESPACE* ~ expression ~ NEWLINE
+}
+
+// Conditional Requirements
+class_if_required = {
+    "if_required" ~ ":" ~ NEWLINE ~
+    INDENT ~ conditional_req_entry+ ~ DEDENT?
+}
+
+conditional_req_entry = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ "then_required" ~ ":" ~ NEWLINE ~
+    INDENT ~ then_required_entry+ ~ DEDENT? ~ DEDENT?
+}
+
+then_required_entry = {
+    "-" ~ WHITESPACE* ~ identifier ~ NEWLINE
+}
+
+// Unique Keys
+class_unique_keys = {
+    "unique_keys" ~ ":" ~ NEWLINE ~
+    INDENT ~ unique_key_entry+ ~ DEDENT?
+}
+
+unique_key_entry = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ "unique_key_slots" ~ ":" ~ NEWLINE ~
+    INDENT ~ unique_key_slot+ ~ DEDENT? ~ DEDENT?
+}
+
+unique_key_slot = {
+    "-" ~ WHITESPACE* ~ identifier ~ NEWLINE
+}
+
+// Recursion Options
+class_recursion_options = {
+    "recursion_options" ~ ":" ~ NEWLINE ~
+    INDENT ~
+    ("use_box" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE)? ~
+    ("max_depth" ~ ":" ~ WHITESPACE* ~ integer ~ NEWLINE)? ~
+    DEDENT?
+}
+
+// Class Metadata
+class_aliases = { list_field("aliases") }
+class_see_also = { list_field("see_also") }
+class_id_prefixes = { list_field("id_prefixes") }
+class_broad_mappings = { list_field("broad_mappings") }
+class_exact_mappings = { list_field("exact_mappings") }
+class_narrow_mappings = { list_field("narrow_mappings") }
+class_related_mappings = { list_field("related_mappings") }
+class_close_mappings = { list_field("close_mappings") }
+
+// ============================================================================
+// Slots
+// ============================================================================
+
+schema_slots = {
+    "slots" ~ ":" ~ NEWLINE ~
+    INDENT ~ slot_definition+ ~ DEDENT?
+}
+
+slot_definition = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ slot_field+ ~ DEDENT?
+}
+
+slot_field = {
+    slot_description
+    | slot_range
+    | slot_range_type
+    | slot_range_properties
+    | slot_required
+    | slot_multivalued
+    | slot_identifier
+    | slot_pattern
+    | slot_structured_pattern
+    | slot_minimum_value
+    | slot_maximum_value
+    | slot_minimum_cardinality
+    | slot_maximum_cardinality
+    | slot_is_a
+    | slot_mixins
+    | slot_slot_uri
+    | slot_domain
+    | slot_inverse
+    | slot_symmetric
+    | slot_asymmetric
+    | slot_reflexive
+    | slot_irreflexive
+    | slot_locally_reflexive
+    | slot_transitive
+    | slot_ifabsent
+    | slot_annotations
+    | slot_aliases
+    | slot_see_also
+    | slot_equals_string
+    | slot_equals_number
+    | slot_imports
+}
+
+slot_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | string_value) }
+slot_range = { "range" ~ ":" ~ WHITESPACE* ~ identifier ~ NEWLINE }
+slot_range_type = { "range_type" ~ ":" ~ WHITESPACE* ~ ("class" | "instance") ~ NEWLINE }
+slot_required = { "required" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_multivalued = { "multivalued" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_identifier = { "identifier" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_pattern = { "pattern" ~ ":" ~ WHITESPACE* ~ regex_pattern ~ NEWLINE }
+slot_minimum_value = { "minimum_value" ~ ":" ~ WHITESPACE* ~ (number | string_value) ~ NEWLINE }
+slot_maximum_value = { "maximum_value" ~ ":" ~ WHITESPACE* ~ (number | string_value) ~ NEWLINE }
+slot_minimum_cardinality = { "minimum_cardinality" ~ ":" ~ WHITESPACE* ~ integer ~ NEWLINE }
+slot_maximum_cardinality = { "maximum_cardinality" ~ ":" ~ WHITESPACE* ~ integer ~ NEWLINE }
+slot_is_a = { "is_a" ~ ":" ~ WHITESPACE* ~ identifier ~ NEWLINE }
+slot_slot_uri = { "slot_uri" ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE }
+slot_domain = { "domain" ~ ":" ~ WHITESPACE* ~ identifier ~ NEWLINE }
+slot_inverse = { "inverse" ~ ":" ~ WHITESPACE* ~ identifier ~ NEWLINE }
+slot_symmetric = { "symmetric" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_asymmetric = { "asymmetric" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_reflexive = { "reflexive" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_irreflexive = { "irreflexive" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_locally_reflexive = { "locally_reflexive" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_transitive = { "transitive" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE }
+slot_ifabsent = { "ifabsent" ~ ":" ~ WHITESPACE* ~ string_value ~ NEWLINE }
+slot_equals_string = { "equals_string" ~ ":" ~ WHITESPACE* ~ string_value ~ NEWLINE }
+slot_equals_number = { "equals_number" ~ ":" ~ WHITESPACE* ~ number ~ NEWLINE }
+
+slot_mixins = {
+    "mixins" ~ ":" ~ NEWLINE ~
+    INDENT ~ mixin_entry+ ~ DEDENT?
+}
+
+// Structured Pattern (for identifier validation with interpolation)
+slot_structured_pattern = {
+    "structured_pattern" ~ ":" ~ NEWLINE ~
+    INDENT ~
+    "syntax" ~ ":" ~ WHITESPACE* ~ string_value ~ NEWLINE ~
+    "interpolated" ~ ":" ~ WHITESPACE* ~ boolean ~ NEWLINE ~
+    DEDENT?
+}
+
+// Range Properties (for validating specific properties of range instances)
+slot_range_properties = {
+    "range_properties" ~ ":" ~ NEWLINE ~
+    INDENT ~ range_property_entry+ ~ DEDENT?
+}
+
+range_property_entry = {
+    "-" ~ WHITESPACE* ~ identifier ~ NEWLINE
+}
+
+// Slot imports (for scoped slot import resolution)
+slot_imports = {
+    "imports" ~ ":" ~ NEWLINE ~
+    INDENT ~ import_entry+ ~ DEDENT?
+}
+
+slot_aliases = { list_field("aliases") }
+slot_see_also = { list_field("see_also") }
+
+// ============================================================================
+// Types
+// ============================================================================
+
+schema_types = {
+    "types" ~ ":" ~ NEWLINE ~
+    INDENT ~ type_definition+ ~ DEDENT?
+}
+
+type_definition = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ type_field+ ~ DEDENT?
+}
+
+type_field = {
+    type_description
+    | type_typeof
+    | type_base
+    | type_uri
+    | type_pattern
+    | type_minimum_value
+    | type_maximum_value
+    | type_annotations
+}
+
+type_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | string_value) }
+type_typeof = { "typeof" ~ ":" ~ WHITESPACE* ~ identifier ~ NEWLINE }
+type_base = { "base" ~ ":" ~ WHITESPACE* ~ identifier ~ NEWLINE }
+type_uri = { "uri" ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE }
+type_pattern = { "pattern" ~ ":" ~ WHITESPACE* ~ regex_pattern ~ NEWLINE }
+type_minimum_value = { "minimum_value" ~ ":" ~ WHITESPACE* ~ (number | string_value) ~ NEWLINE }
+type_maximum_value = { "maximum_value" ~ ":" ~ WHITESPACE* ~ (number | string_value) ~ NEWLINE }
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+schema_enums = {
+    "enums" ~ ":" ~ NEWLINE ~
+    INDENT ~ enum_definition+ ~ DEDENT?
+}
+
+enum_definition = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ enum_field+ ~ DEDENT?
+}
+
+enum_field = {
+    enum_description
+    | enum_permissible_values
+    | enum_code_set
+    | enum_code_set_tag
+    | enum_code_set_version
+    | enum_annotations
+}
+
+enum_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | string_value) }
+enum_code_set = { "code_set" ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE }
+enum_code_set_tag = { "code_set_tag" ~ ":" ~ WHITESPACE* ~ string_value ~ NEWLINE }
+enum_code_set_version = { "code_set_version" ~ ":" ~ WHITESPACE* ~ string_value ~ NEWLINE }
+
+enum_permissible_values = {
+    "permissible_values" ~ ":" ~ NEWLINE ~
+    INDENT ~ permissible_value_entry+ ~ DEDENT?
+}
+
+permissible_value_entry = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ permissible_value_field+ ~ DEDENT?
+}
+
+permissible_value_field = {
+    pv_description
+    | pv_meaning
+    | pv_aliases
+    | pv_see_also
+}
+
+pv_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | string_value) }
+pv_meaning = { "meaning" ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE }
+pv_aliases = { list_field("aliases") }
+pv_see_also = { list_field("see_also") }
+
+// ============================================================================
+// Subsets
+// ============================================================================
+
+schema_subsets = {
+    "subsets" ~ ":" ~ NEWLINE ~
+    INDENT ~ subset_definition+ ~ DEDENT?
+}
+
+subset_definition = {
+    identifier ~ ":" ~ NEWLINE ~
+    INDENT ~ subset_field+ ~ DEDENT?
+}
+
+subset_field = {
+    subset_description
+    | subset_annotations
+}
+
+subset_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | string_value) }
+
+// ============================================================================
+// Annotations (arbitrary key-value metadata)
+// ============================================================================
+
+schema_annotations = { annotations("annotations") }
+class_annotations = { annotations("annotations") }
+type_annotations = { annotations("annotations") }
+enum_annotations = { annotations("annotations") }
+subset_annotations = { annotations("annotations") }
+slot_annotations = { annotations("annotations") }
+
+annotations = { field_name ~ ":" ~ NEWLINE ~ INDENT ~ annotation_entry+ ~ DEDENT? }
+
+annotation_entry = {
+    identifier ~ ":" ~ WHITESPACE* ~ (annotation_value | NEWLINE ~ INDENT ~ annotation_value ~ DEDENT?) ~ NEWLINE?
+}
+
+annotation_value = {
+    boolean
+    | number
+    | string_value
+    | block_string
+    | list_value
+}
+
+list_value = {
+    NEWLINE ~ INDENT ~ list_item+ ~ DEDENT?
+}
+
+list_item = {
+    "-" ~ WHITESPACE* ~ (string_value | identifier) ~ NEWLINE
+}
+
+// ============================================================================
+// Schema Metadata (Contributors, Categories, Keywords, See Also)
+// ============================================================================
+
+schema_metadata = {
+    schema_contributors
+    | schema_categories
+    | schema_keywords
+    | schema_see_also
+}
+
+schema_contributors = {
+    "contributors" ~ ":" ~ NEWLINE ~
+    INDENT ~ contributor_entry+ ~ DEDENT?
+}
+
+contributor_entry = {
+    "-" ~ WHITESPACE* ~ "name" ~ ":" ~ WHITESPACE* ~ string_value ~ NEWLINE ~
+    (WHITESPACE* ~ "email" ~ ":" ~ WHITESPACE* ~ string_value ~ NEWLINE)? ~
+    (WHITESPACE* ~ "orcid" ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE)?
+}
+
+schema_categories = { list_field("categories") }
+schema_keywords = { list_field("keywords") }
+schema_see_also = { list_field("see_also") }
+
+// ============================================================================
+// Generic List Field Helper
+// ============================================================================
+
+list_field = { field_name ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+
+string_list_entry = {
+    "-" ~ WHITESPACE* ~ (string_value | identifier | uri) ~ NEWLINE
+}
+
+// ============================================================================
+// Primitive Types
+// ============================================================================
+
+identifier = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-")* }
+
+uri = @{
+    (
+        // Absolute URI with scheme
+        ASCII_ALPHA+ ~ ":" ~ "//" ~ (!NEWLINE ~ !(WHITESPACE ~ "#") ~ ANY)+
+    )
+    | (
+        // CURIE (compact URI)
+        identifier ~ ":" ~ (!NEWLINE ~ !(WHITESPACE ~ "#") ~ ANY)+
+    )
+}
+
+timestamp = @{
+    "'" ~
+    ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} ~
+    ("T" ~ ASCII_DIGIT{2} ~ ":" ~ ASCII_DIGIT{2} ~ ":" ~ ASCII_DIGIT{2} ~
+     ("+" | "-") ~ ASCII_DIGIT{2} ~ ":" ~ ASCII_DIGIT{2})? ~
+    "'"
+}
+
+boolean = @{ "true" | "false" | "True" | "False" | "TRUE" | "FALSE" }
+
+integer = @{ "-"? ~ ASCII_DIGIT+ }
+
+number = @{
+    "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? ~ (("e" | "E") ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+}
+
+regex_pattern = @{ (!NEWLINE ~ ANY)+ }
+
+string_value = @{
+    // Single-quoted string
+    "'" ~ (!"'" ~ ANY)* ~ "'"
+    |
+    // Double-quoted string
+    "\"" ~ (!"\"" ~ ANY)* ~ "\""
+    |
+    // Unquoted string (for simple values)
+    (!(NEWLINE | "#") ~ !(":" ~ WHITESPACE) ~ ANY)+
+}
+
+block_string = {
+    "|" ~ NEWLINE ~
+    INDENT ~ block_string_line+ ~ DEDENT?
+}
+
+block_string_line = {
+    (!NEWLINE ~ ANY)* ~ NEWLINE
+}
+
+expression = @{ (!NEWLINE ~ ANY)+ }
+
+field_name = @{ identifier }
+
+// ============================================================================
+// Whitespace and Comments
+// ============================================================================
+
+WHITESPACE = _{ " " | "\t" }
+
+NEWLINE = _{ "\r\n" | "\n" | "\r" }
+
+comment = _{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE? }
+
+INDENT = _{ PUSH(" "+) }
+
+DEDENT = _{ DROP }
+
+// ============================================================================
+// End of Grammar
+// ============================================================================

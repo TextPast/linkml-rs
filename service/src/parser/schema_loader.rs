@@ -5,6 +5,7 @@ use linkml_core::{
     settings::ImportSettings,
     types::SchemaDefinition,
 };
+use parse_core::ParseService;
 use reqwest;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -13,19 +14,19 @@ use tokio::fs;
 use super::{ImportResolverV2, Parser};
 
 /// Loader for `LinkML` schemas from various sources
-pub struct SchemaLoader {
-    parser: Parser,
+pub struct SchemaLoader<P: ParseService> {
+    parser: Parser<P>,
     http_client: reqwest::Client,
     /// Optional import resolver with custom HTTP client
     import_resolver: Option<Arc<ImportResolverV2>>,
 }
 
-impl SchemaLoader {
-    /// Create a new schema loader with default settings
+impl<P: ParseService> SchemaLoader<P> {
+    /// Create a new schema loader with ParseService
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(parse_service: Arc<P>) -> Self {
         Self {
-            parser: Parser::new(),
+            parser: Parser::new(parse_service),
             http_client: reqwest::Client::new(),
             import_resolver: None,
         }
@@ -36,9 +37,9 @@ impl SchemaLoader {
     /// This allows using a production-ready HTTP client with rate limiting,
     /// caching, retries, and logging for schema imports.
     #[must_use]
-    pub fn with_resolver(resolver: ImportResolverV2) -> Self {
+    pub fn with_resolver(parse_service: Arc<P>, resolver: ImportResolverV2) -> Self {
         Self {
-            parser: Parser::new(),
+            parser: Parser::new(parse_service),
             http_client: reqwest::Client::new(),
             import_resolver: Some(Arc::new(resolver)),
         }
@@ -48,9 +49,9 @@ impl SchemaLoader {
     ///
     /// This allows sharing the same resolver (and its cache) across multiple loaders.
     #[must_use]
-    pub fn with_shared_resolver(resolver: Arc<ImportResolverV2>) -> Self {
+    pub fn with_shared_resolver(parse_service: Arc<P>, resolver: Arc<ImportResolverV2>) -> Self {
         Self {
-            parser: Parser::new(),
+            parser: Parser::new(parse_service),
             http_client: reqwest::Client::new(),
             import_resolver: Some(resolver),
         }
@@ -76,7 +77,7 @@ impl SchemaLoader {
             .ok_or_else(|| LinkMLError::parse("No file extension found"))?;
 
         // Parse the schema
-        let schema = self.parser.parse_str(&content, extension)?;
+        let schema = self.parser.parse_str(&content, extension).await?;
 
         // Set up import settings with the file's parent directory as search path
         let mut settings = ImportSettings::default();
@@ -172,7 +173,7 @@ impl SchemaLoader {
         };
 
         // Parse the schema
-        let schema = self.parser.parse_str(&content, format)?;
+        let schema = self.parser.parse_str(&content, format).await?;
 
         // Set up import settings with URL base
         let mut settings = ImportSettings::default();
@@ -213,7 +214,7 @@ impl SchemaLoader {
     /// # Errors
     ///
     pub async fn load_string(&self, content: &str, format: &str) -> Result<SchemaDefinition> {
-        let schema = self.parser.parse_str(content, format)?;
+        let schema = self.parser.parse_str(content, format).await?;
 
         // Use schema settings if available, otherwise defaults
         let settings = if let Some(schema_settings) = &schema.settings {
@@ -232,8 +233,4 @@ impl SchemaLoader {
     }
 }
 
-impl Default for SchemaLoader {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+

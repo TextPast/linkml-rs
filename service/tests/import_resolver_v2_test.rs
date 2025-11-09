@@ -1,7 +1,7 @@
 //! Comprehensive tests for enhanced import resolution
 
 use linkml_core::settings::{ImportResolutionStrategy, ImportSettings};
-use linkml_service::parser::{ImportResolverV2, SchemaLoader, SchemaParser, YamlParser};
+use linkml_service::parser::{ImportResolverV2, SchemaLoader, SchemaParser};
 use tempfile::TempDir;
 use tokio::fs;
 
@@ -119,9 +119,9 @@ slots:
     range: Identifier
 "#;
 
-    let parser = YamlParser::new();
+    let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse(main_schema)
+        .parse_str(main_schema, "yaml")
         ?;
 
     let mut settings = ImportSettings::default();
@@ -213,9 +213,9 @@ slots:
     multivalued: true
 "#;
 
-    let parser = YamlParser::new();
+    let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse(main_schema)
+        .parse_str(main_schema, "yaml")
         ?;
 
     let mut settings = ImportSettings::default();
@@ -306,9 +306,9 @@ classes:
     description: Uses both status types
 "#;
 
-    let parser = YamlParser::new();
+    let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse(main_schema)
+        .parse_str(main_schema, "yaml")
         ?;
 
     let mut settings = ImportSettings::default();
@@ -394,9 +394,9 @@ slots:
     range: Location
 "#;
 
-    let parser = YamlParser::new();
+    let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse(main_schema)
+        .parse_str(main_schema, "yaml")
         ?;
 
     let mut settings = ImportSettings::default();
@@ -477,9 +477,9 @@ imports:
         .await
         ?;
 
-    let parser = YamlParser::new();
+    let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse(main_schema)
+        .parse_str(main_schema, "yaml")
         ?;
 
     // Test relative resolution
@@ -635,9 +635,9 @@ classes:
             ?;
     }
 
-    let parser = YamlParser::new();
+    let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse(&format!(
+        .parse_str(&format!(
             r#"
 id: https://example.org/schema14
 name: schema14
@@ -647,7 +647,7 @@ classes:
   Class14:
     name: Class14
 "#
-        ))
+        ), "yaml")
         ?;
 
     let mut settings = ImportSettings::default();
@@ -734,9 +734,9 @@ imports:
   - b
 "#;
 
-    let parser = YamlParser::new();
+    let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse(main_schema)
+        .parse_str(main_schema, "yaml")
         ?;
 
     let mut settings = ImportSettings::default();

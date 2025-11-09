@@ -22,6 +22,8 @@ pub struct ImportResolver {
     base_url: Arc<RwLock<Option<String>>>,
     /// Maximum import depth to prevent infinite recursion
     max_depth: usize,
+    /// Parse service for loading schema files
+    parse_service: Option<Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>>,
 }
 
 impl Default for ImportResolver {
@@ -40,7 +42,30 @@ impl ImportResolver {
             base_path: Arc::new(RwLock::new(None)),
             base_url: Arc::new(RwLock::new(None)),
             max_depth: 10,
+            parse_service: None,
         }
+    }
+
+    /// Create with specific search paths
+    #[must_use]
+    pub fn with_search_paths(search_paths: Vec<PathBuf>) -> Self {
+        Self {
+            cache: Arc::new(RwLock::new(HashMap::new())),
+            search_paths: Arc::new(RwLock::new(search_paths)),
+            base_path: Arc::new(RwLock::new(None)),
+            base_url: Arc::new(RwLock::new(None)),
+            max_depth: 10,
+            parse_service: None,
+        }
+    }
+
+    /// Set the parse service for loading schema files
+    pub fn set_parse_service(
+        &mut self,
+        parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
+    ) {
+        self.parse_service = Some(parse_service);
+    }
     }
 
     /// Create with specific search paths
@@ -85,17 +110,21 @@ impl ImportResolver {
     /// # Errors
     ///
     /// Returns an error if import resolution fails.
-    pub fn resolve_imports_async(&self, schema: &SchemaDefinition) -> Result<SchemaDefinition> {
+    pub async fn resolve_imports_async(
+        &self,
+        schema: &SchemaDefinition,
+    ) -> Result<SchemaDefinition> {
         let mut merged = schema.clone();
         let mut visited = HashSet::new();
 
-        self.resolve_imports_recursive(&mut merged, &mut visited, 0)?;
+        self.resolve_imports_recursive(&mut merged, &mut visited, 0)
+            .await?;
 
         Ok(merged)
     }
 
     /// Resolve imports recursively
-    fn resolve_imports_recursive(
+    async fn resolve_imports_recursive(
         &self,
         schema: &mut SchemaDefinition,
         visited: &mut HashSet<String>,
@@ -118,7 +147,7 @@ impl ImportResolver {
             visited.insert(import.clone());
 
             // Try to resolve the import
-            let imported_schema = self.load_import(&import)?;
+            let imported_schema = self.load_import(&import).await?;
 
             // Merge the imported schema into the current schema
             Self::merge_schema(schema, &imported_schema)?;
@@ -128,7 +157,7 @@ impl ImportResolver {
     }
 
     /// Load an imported schema
-    fn load_import(&self, import: &str) -> Result<SchemaDefinition> {
+    async fn load_import(&self, import: &str) -> Result<SchemaDefinition> {
         // Check cache first
         {
             let cache = self.cache.read();
@@ -141,7 +170,7 @@ impl ImportResolver {
         let path = self.find_import_file(import)?;
 
         // Load and parse the schema
-        let schema = Self::load_schema_file(&path)?;
+        let schema = self.load_schema_file(&path).await?;
 
         // Cache the result
         {
@@ -183,11 +212,15 @@ impl ImportResolver {
     }
 
     /// Load and parse a schema file
-    fn load_schema_file(path: &Path) -> Result<SchemaDefinition> {
+    async fn load_schema_file(&self, path: &Path) -> Result<SchemaDefinition> {
         use super::Parser;
 
-        let parser = Parser::new();
-        parser.parse_file(path)
+        let parse_service = self.parse_service.as_ref().ok_or_else(|| {
+            LinkMLError::service("ImportResolver: parse_service not initialized".to_string())
+        })?;
+
+        let parser = Parser::new(parse_service.clone());
+        parser.parse_file(path).await
     }
 
     /// Merge an imported schema into the current schema
@@ -289,9 +322,9 @@ classes:
 ";
 
         // Parse main schema
-        use super::super::yaml_parser::YamlParser;
-        let parser = YamlParser::new();
-        let schema = parser.parse_str(main_schema)?;
+        use super::Parser;
+        let parser = Parser::new();
+        let schema = parser.parse_str(main_schema, "yaml")?;
 
         // Resolve imports
         let resolver = ImportResolver::with_search_paths(vec![base_path.to_path_buf()]);

@@ -6,14 +6,16 @@
 //! Usage:
 //!   cargo run --example batch_export_from_typedb -- --config crates/model/symbolic/linkml/service/examples/configs/batch_export_config.yaml
 
-use clap::Parser;
+use clap::Parser as ClapParser;
 use linkml_core::types::SchemaDefinition;
-use linkml_service::parser::YamlParser;
+use linkml_service::parser::{Parser as LinkmlParser, SchemaParser};
 use linkml_service::loader::{
     DataDumper, DataLoader, DumpOptions, LoadOptions,
     RdfDumper, RdfOptions, RdfSerializationFormat,
     TypeDBIntegrationLoader, TypeDBIntegrationOptions,
 };
+use logger_service::wiring::wire_testing_logger;
+use parse_service::NoLinkML;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -21,7 +23,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::Semaphore;
 
-#[derive(Parser, Debug)]
+#[derive(ClapParser, Debug)]
 #[command(name = "batch_export_from_typedb")]
 #[command(about = "Batch export from TypeDB to all formats", long_about = None)]
 struct Args {
@@ -349,9 +351,13 @@ async fn export_single_class(
 async fn load_schema(
     schema_path: &Path,
 ) -> std::result::Result<SchemaDefinition, Box<dyn std::error::Error>> {
+    let logger = wire_testing_logger()?.into_arc();
+    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
+    let parse_service = parse_service_handle.into_arc();
+    
     let schema_content = fs::read_to_string(schema_path)?;
-    let parser = YamlParser::new();
-    let schema = parser.parse(&schema_content)?;
+    let parser = LinkmlParser::new(parse_service);
+    let schema = parser.parse_str(&schema_content, "yaml").await?;
     Ok(schema)
 }
 

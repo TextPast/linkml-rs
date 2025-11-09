@@ -9,7 +9,11 @@
 
 use linkml_core::prelude::*;
 use linkml_service::prelude::*;
+use linkml_service::parser::{Parser, SchemaParser};
+use logger_service::wiring::wire_testing_logger;
+use parse_service::NoLinkML;
 use serde_json::json;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -211,8 +215,12 @@ enums:
 "#;
 
     // Parse schema
-    let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
+    let logger = wire_testing_logger()?.into_arc();
+    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
+    let parse_service = parse_service_handle.into_arc();
+    
+    let parser = Parser::new(parse_service);
+    let schema = parser.parse_str(schema_yaml, "yaml").await?;
 
     // Create LinkML service
     let service = create_linkml_service().await?;

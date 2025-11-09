@@ -12,7 +12,7 @@ use linkml_service::config::{LinkMLConfig, load_config};
 use linkml_service::expression::ExpressionEngine;
 use linkml_service::file_system_adapter::FileSystemAdapter;
 use linkml_service::generator::{GeneratorRegistry, GeneratorType};
-use linkml_service::parser::{SchemaParser, yaml_parser::YamlParser};
+use linkml_service::parser::SchemaParser;
 use linkml_service::schema_view::SchemaView;
 use linkml_service::validator::Validator;
 

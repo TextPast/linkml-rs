@@ -13,7 +13,7 @@ use linkml_service::{
         JavaGenerator, ProtobufGenerator, PythonDataclassGenerator, RustGenerator, TypeQLGenerator,
         TypeScriptGenerator, typeql_generator::create_typeql_generator,
     },
-    parser::yaml_parser::YamlParser,
+    parser::{Parser, SchemaParser},
     performance::{MemoryScope, global_profiler, intern},
     schema_view::SchemaView,
     security::{ResourceLimits, create_monitor, validate_string_input},
@@ -304,7 +304,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // 2. Parse the schema
     println!("1. Parsing Schema");
     println!("-----------------");
-    let schema = profiler.time("parse_schema", || YamlParser::parse_string(schema_yaml))?;
+    let schema = profiler.time("parse_schema", || Parser::new().parse_str(schema_yaml, "yaml"))?;
     println!("✓ Schema parsed successfully");
     println!("  Classes: {}", schema.classes.len());
     println!("  Slots: {}", schema.slots.len());

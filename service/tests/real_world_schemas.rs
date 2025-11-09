@@ -2,7 +2,7 @@
 
 use linkml_core::types::SchemaDefinition;
 use linkml_service::factory::create_linkml_service;
-use linkml_service::parser::yaml_parser::YamlParser;
+use linkml_service::parser::{Parser, SchemaParser};
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::sync::Arc;
@@ -151,8 +151,8 @@ enums:
 "#;
 
     // Parse the schema
-    let parser = YamlParser::new();
-    let schema = parser.parse(biolink_schema)?;
+    let parser = Parser::new();
+    let schema = parser.parse_str(biolink_schema, "yaml")?;
 
     // Create test data
     let test_gene = json!({
@@ -364,8 +364,8 @@ types:
 "#;
 
     // Parse the schema
-    let parser = YamlParser::new();
-    let schema = parser.parse(fair_schema)?;
+    let parser = Parser::new();
+    let schema = parser.parse_str(fair_schema, "yaml")?;
 
     // Create test data
     let test_person = json!({
@@ -506,8 +506,8 @@ types:
     base: float
 "#;
 
-    let parser = YamlParser::new();
-    let schema = parser.parse(schema_yaml)?;
+    let parser = Parser::new();
+    let schema = parser.parse_str(schema_yaml, "yaml")?;
     let engine = ValidationEngine::new(Arc::new(schema));
 
     // Test data with valid cross-references
@@ -627,8 +627,8 @@ types:
     base: float
 "#;
 
-    let parser = YamlParser::new();
-    let schema = parser.parse(schema_yaml)?;
+    let parser = Parser::new();
+    let schema = parser.parse_str(schema_yaml, "yaml")?;
     let engine = ValidationEngine::new(Arc::new(schema));
 
     // Generate large dataset

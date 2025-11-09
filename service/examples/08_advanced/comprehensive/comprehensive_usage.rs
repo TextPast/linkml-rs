@@ -6,7 +6,7 @@
 use anyhow::Result;
 use linkml_core::prelude::*;
 use linkml_service::generator::PythonDataclassGenerator;
-use linkml_service::parser::YamlParser;
+use linkml_service::parser::{Parser, SchemaParser};
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::sync::Arc;
@@ -66,8 +66,8 @@ enums:
         description: Temporarily unavailable
 "#;
 
-    let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
+    let parser = Parser::new();
+    let schema = parser.parse_str(schema_yaml, "yaml")?;
     println!("✓ Parsed schema '{}'", schema.name);
     Ok(schema)
 }

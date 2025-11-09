@@ -11,7 +11,7 @@ use linkml_service::{
         TypeQLGenerator,
     },
     loader::{DataLoader, yaml::YamlLoader},
-    parser::{SchemaParser, yaml_parser::YamlParser},
+    parser::{Parser, SchemaParser},
     schema_view::SchemaView,
     validator::engine::{ValidationEngine, ValidationOptions},
 };
@@ -170,8 +170,8 @@ slots:
     fs::write(&schema_path, schema_yaml).expect("write schema");
 
     // Step 1: Parse the schema
-    let parser = YamlParser::new();
-    let schema = match parser.parse_file(&schema_path) {
+    let parser = Parser::new();
+    let schema = match parser.parse_file(&schema_path, "yaml") {
         Ok(s) => s,
         Err(e) => {
             eprintln!("Parse error (expected): {}", e);
@@ -301,8 +301,8 @@ slots:
     fs::write(&data_path, data_yaml).expect("write data");
 
     // Load schema
-    let parser = YamlParser::new();
-    let schema = parser.parse_file(&schema_path).expect("parse schema");
+    let parser = Parser::new();
+    let schema = parser.parse_file(&schema_path, "yaml").expect("parse schema");
 
     // Load data
     let loader = YamlLoader::new();
@@ -418,10 +418,10 @@ types:
 "#,
     ];
 
-    let parser = YamlParser::new();
+    let parser = Parser::new();
 
     for (i, schema_str) in test_schemas.iter().enumerate() {
-        match parser.parse(schema_str) {
+        match parser.parse_str(schema_str, "yaml") {
             Ok(schema) => {
                 // Even if parsing succeeds, validation should catch issues
                 let validator = ValidationEngine::new(&schema).expect("create validator");
@@ -459,8 +459,8 @@ slots:
     range: integer
 "#;
 
-    let parser = YamlParser::new();
-    let schema = parser.parse(schema_yaml).expect("parse schema");
+    let parser = Parser::new();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("parse schema");
 
     let mut tasks = JoinSet::new();
 

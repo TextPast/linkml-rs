@@ -43,6 +43,7 @@ pub async fn create_linkml_service<T, E, C, O, R>(
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
     random_service: Arc<R>,
+    parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
 ) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
 where
     T: TaskManagementService + Send + Sync + 'static,
@@ -69,6 +70,7 @@ where
         cache,
         monitor,
         random_service,
+        parse_service,
     };
     let service = LinkMLServiceImpl::with_config(core_config, deps)?;
 
@@ -157,6 +159,8 @@ pub struct LinkMLServiceDependencies<T, E, C, O, R> {
     pub monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
     /// Random service
     pub random_service: Arc<R>,
+    /// Parse service for async YAML/JSON parsing
+    pub parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
 }
 
 /// Create a `LinkML` service with custom configuration

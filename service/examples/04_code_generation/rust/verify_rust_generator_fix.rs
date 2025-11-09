@@ -4,7 +4,7 @@
 //! struct fields instead of TODO comments.
 
 use linkml_service::generator::GeneratorRegistry;
-use linkml_service::parser::YamlParser;
+use linkml_service::parser::{Parser, SchemaParser};
 use std::error::Error;
 
 fn main() -> std::result::Result<(), Box<dyn Error>> {
@@ -101,8 +101,8 @@ enums:
     println!("{}", "─".repeat(60));
 
     // Parse the schema
-    let parser = YamlParser::new();
-    let schema = parser.parse(schema_yaml)?;
+    let parser = Parser::new();
+    let schema = parser.parse_str(schema_yaml, "yaml")?;
 
     println!(
         "

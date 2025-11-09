@@ -154,7 +154,7 @@ cache_core = { workspace = true }
 telemetry_core = { workspace = true }
 lakehouse_core = { workspace = true }
 parse_core = { workspace = true }
-# parse_service = { path = "../../../data/parsing/parse/service", package = "rootreal-data-parsing-parse" }  # Circular dependency with parse_service
+parse_service = { workspace = true }
 timeout_core = { workspace = true }
 random_core = { workspace = true }
 random_service = { workspace = true }

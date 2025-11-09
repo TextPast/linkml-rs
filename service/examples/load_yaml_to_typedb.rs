@@ -8,17 +8,20 @@
 //!     --config crates/model/symbolic/linkml/service/examples/configs/batch_export_config.yaml \
 //!     --database rootreal_test
 
-use clap::Parser;
+use clap::Parser as ClapParser;
 use linkml_core::types::SchemaDefinition;
-use linkml_service::parser::YamlParser;
+use linkml_service::parser::{Parser as LinkmlParser, SchemaParser};
 use linkml_service::loader::DataInstance;
 use linkml_service::typedb_helper::{TypeDBHelper, instance_to_typeql};
+use logger_service::wiring::wire_testing_logger;
+use parse_service::NoLinkML;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Instant;
 
-#[derive(Parser, Debug)]
+#[derive(ClapParser, Debug)]
 #[command(name = "load_yaml_to_typedb")]
 #[command(about = "Load YAML instance data into TypeDB", long_about = None)]
 struct Args {
@@ -316,8 +319,14 @@ async fn load_schema(
     schema_path: &PathBuf,
 ) -> std::result::Result<SchemaDefinition, Box<dyn std::error::Error>> {
     let schema_content = fs::read_to_string(schema_path)?;
-    let parser = YamlParser::new();
-    let schema = parser.parse(&schema_content)?;
+    
+    // Wire ParseService for schema parsing
+    let logger = wire_testing_logger()?.into_arc();
+    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
+    let parse_service = parse_service_handle.into_arc();
+    
+    let parser = LinkmlParser::new(parse_service);
+    let schema = parser.parse_str(&schema_content, "yaml").await?;
     Ok(schema)
 }
 

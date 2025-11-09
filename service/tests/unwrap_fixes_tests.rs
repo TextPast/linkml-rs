@@ -18,7 +18,7 @@ use linkml_service::{
     loader::{
         csv::CsvLoader, json::JsonLoader, rdf::RdfLoader, traits::LoadOptions, yaml::YamlLoader,
     },
-    parser::{Parser, SchemaParser, json_parser::JsonParser, yaml_parser::YamlParser},
+    parser::{Parser, SchemaParser},
     plugin::{
         compatibility::CompatibilityChecker, discovery::PluginDiscovery, registry::PluginRegistry,
     },
@@ -41,8 +41,8 @@ invalid: yaml: syntax:
   unclosed: [bracket
 ";
 
-    let yaml_parser = YamlParser::new();
-    let result = yaml_parser.parse(invalid_yaml);
+    let yaml_parser = Parser::new();
+    let result = yaml_parser.parse_str(invalid_yaml, "yaml");
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
@@ -55,8 +55,8 @@ invalid: yaml: syntax:
     // Test JSON parser with invalid syntax
     let invalid_json = r#"{"invalid": "json", "missing": }"#;
 
-    let json_parser = JsonParser::new();
-    let result = json_parser.parse(invalid_json);
+    let json_parser = Parser::new();
+    let result = json_parser.parse_str(invalid_json, "json");
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
@@ -282,17 +282,17 @@ fn test_schema_operations_error_propagation() {
 #[test]
 fn test_file_operation_error_propagation() {
     // Test reading non-existent file
-    let yaml_parser = YamlParser::new();
-    let result = yaml_parser.parse_file(Path::new("/non/existent/file.yaml"));
+    let yaml_parser = Parser::new();
+    let result = yaml_parser.parse_file(Path::new("/non/existent/file.yaml"), "yaml");
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), LinkMLError::IO(_));
 
     // Test writing to read-only location
-    let json_parser = JsonParser::new();
+    let json_parser = Parser::new();
     let schema = SchemaDefinition::default();
 
     // Try to write to root directory (should fail on most systems)
-    let result = json_parser.write_to_file(&schema, Path::new("/root_file.json"));
+    let result = json_parser.write_to_file(&schema, Path::new("/root_file.json"), "json");
     assert!(result.is_err());
 }
 
@@ -309,14 +309,14 @@ use linkml_core::error::LinkMLError;
     // Spawn multiple tasks that might fail
     for i in 0..5 {
         tasks.spawn(async move {
-            let parser = YamlParser::new();
+            let parser = Parser::new();
             // Some will have invalid syntax
             let yaml = if i % 2 == 0 {
                 "valid: yaml"
             } else {
                 "invalid: yaml: syntax:"
             };
-            parser.parse(yaml)
+            parser.parse_str(yaml, "yaml")
         });
     }
 
@@ -330,7 +330,7 @@ use linkml_core::error::LinkMLError;
 /// Test error context preservation
 #[test]
 fn test_error_context_preservation() {
-    let yaml_parser = YamlParser::new();
+    let yaml_parser = Parser::new();
 
     // Create YAML with error at specific location
     let yaml_with_error = r#"
@@ -347,7 +347,7 @@ classes:
       - slot_with_error: {invalid: syntax}
 "#;
 
-    let result = yaml_parser.parse(yaml_with_error);
+    let result = yaml_parser.parse_str(yaml_with_error, "yaml");
     if let Err(e) = result {
         // Error message should contain useful context
         let error_msg = e.to_string();
@@ -443,8 +443,8 @@ slots:
     fs::write(&schema_path, schema_yaml).expect("should write schema");
 
     // Parse schema - should handle missing references gracefully
-    let parser = YamlParser::new();
-    let schema_result = parser.parse_file(&schema_path);
+    let parser = Parser::new();
+    let schema_result = parser.parse_file(&schema_path, "yaml");
 
     if let Ok(schema) = schema_result {
         // Validate - should report errors without panicking

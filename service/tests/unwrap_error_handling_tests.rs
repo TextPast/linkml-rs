@@ -5,9 +5,8 @@
 
 use linkml_service::{
     parser::{
-        yaml_parser::YamlParser,
-        json_parser::JsonParser,
-        Parser as SchemaParser,
+        Parser,
+        SchemaParser,
     },
     validator::{
         engine::{ValidationEngine, ValidationOptions},
@@ -50,8 +49,8 @@ classes:
       - age  # Missing closing bracket above
 ";
 
-    let parser = YamlParser::new();
-    let result = parser.parse(invalid_yaml);
+    let parser = Parser::new();
+    let result = parser.parse_str(invalid_yaml, "yaml");
 
     // Should return error, not panic
     assert!(result.is_err());
@@ -73,8 +72,8 @@ fn test_parser_handles_invalid_json() {
     }
 }"#;
 
-    let parser = JsonParser::new();
-    let result = parser.parse(invalid_json);
+    let parser = Parser::new();
+    let result = parser.parse_str(invalid_json, "json");
 
     // Should return error, not panic
     assert!(result.is_err());
@@ -271,8 +270,8 @@ slots:
     fs::write(&schema_path, schema_yaml).expect("write schema");
 
     // Parse schema
-    let parser = YamlParser::new();
-    let schema = match parser.parse_file(&schema_path) {
+    let parser = Parser::new();
+    let schema = match parser.parse_file(&schema_path, "yaml") {
         Ok(s) => s,
         Err(e) => {
             // Parse error is acceptable

@@ -1,35 +1,43 @@
-//! YAML parser v2 using file system adapter
+//! YAML parser v2 using ParseService and file system adapter
 //!
-//! This version uses the `FileSystemOperations` trait instead of direct `std::fs` access,
-//! following `RootReal`'s architectural patterns.
+//! This version uses RootReal's `ParseService` for all parsing operations,
+//! following the centralized parsing architecture. File system operations
+//! are handled via the `FileSystemOperations` trait.
 
 use linkml_core::{
     error::{LinkMLError, Result},
     types::SchemaDefinition,
 };
+use parse_core::{ParseService, ParseFormat};
 use std::path::Path;
 use std::sync::Arc;
 
 use super::SchemaParser;
 use crate::file_system_adapter::FileSystemOperations;
 
-/// `YAML` parser implementation with file system adapter
-pub struct YamlParserV2<F: FileSystemOperations> {
+/// `YAML` parser implementation with ParseService and file system adapter
+pub struct YamlParserV2<P: ParseService, F: FileSystemOperations> {
+    parse_service: Arc<P>,
     fs: Arc<F>,
 }
 
-impl<F: FileSystemOperations> YamlParserV2<F> {
-    /// Create a new `YAML` parser with file system adapter
-    pub fn new(fs: Arc<F>) -> Self {
-        Self { fs }
+impl<P: ParseService, F: FileSystemOperations> YamlParserV2<P, F> {
+    /// Create a new `YAML` parser with ParseService and file system adapter
+    pub fn new(parse_service: Arc<P>, fs: Arc<F>) -> Self {
+        Self { parse_service, fs }
     }
 }
 
-impl<F: FileSystemOperations> SchemaParser for YamlParserV2<F> {
+impl<P: ParseService, F: FileSystemOperations> SchemaParser for YamlParserV2<P, F> {
     fn parse_str(&self, content: &str) -> Result<SchemaDefinition> {
-        serde_yaml::from_str(content).map_err(|e| {
+        // Use ParseService, then deserialize from raw_content
+        let parsed_doc = tokio::runtime::Handle::current()
+            .block_on(self.parse_service.parse_with_format(content, ParseFormat::Yaml))
+            .map_err(|e| LinkMLError::parse(format!("Parse service error: {e}")))?;
+
+        serde_yaml::from_str(&parsed_doc.raw_content).map_err(|e| {
             LinkMLError::parse_at(
-                format!("YAML parsing error: {e}"),
+                format!("YAML deserialization error: {e}"),
                 e.location().map_or_else(
                     || "unknown location".to_string(),
                     |l| format!("line {}, column {}", l.line(), l.column()),
@@ -65,11 +73,18 @@ pub trait AsyncSchemaParser: Send + Sync {
 }
 
 #[async_trait::async_trait]
-impl<F: FileSystemOperations> AsyncSchemaParser for YamlParserV2<F> {
+impl<P: ParseService, F: FileSystemOperations> AsyncSchemaParser for YamlParserV2<P, F> {
     async fn parse_str(&self, content: &str) -> Result<SchemaDefinition> {
-        serde_yaml::from_str(content).map_err(|e| {
+        // Use ParseService, then deserialize from raw_content
+        let parsed_doc = self
+            .parse_service
+            .parse_with_format(content, ParseFormat::Yaml)
+            .await
+            .map_err(|e| LinkMLError::parse(format!("Parse service error: {e}")))?;
+
+        serde_yaml::from_str(&parsed_doc.raw_content).map_err(|e| {
             LinkMLError::parse_at(
-                format!("YAML parsing error: {e}"),
+                format!("YAML deserialization error: {e}"),
                 e.location().map_or_else(
                     || "unknown location".to_string(),
                     |l| format!("line {}, column {}", l.line(), l.column()),
@@ -97,7 +112,36 @@ impl<F: FileSystemOperations> AsyncSchemaParser for YamlParserV2<F> {
 mod tests {
     use super::*;
     use crate::file_system_adapter::TokioFileSystemAdapter;
+    use parse_core::{ParsedDocument, ParseError};
     use tempfile::TempDir;
+
+    // Mock ParseService for testing
+    struct MockParseService;
+
+    #[async_trait::async_trait]
+    impl ParseService for MockParseService {
+        type Error = ParseError;
+
+        async fn parse(&self, content: &str) -> std::result::Result<ParsedDocument, Self::Error> {
+            Ok(ParsedDocument {
+                raw_content: content.to_string(),
+                format: ParseFormat::Yaml,
+                metadata: Default::default(),
+            })
+        }
+
+        async fn parse_with_format(
+            &self,
+            content: &str,
+            _format: ParseFormat,
+        ) -> std::result::Result<ParsedDocument, Self::Error> {
+            Ok(ParsedDocument {
+                raw_content: content.to_string(),
+                format: ParseFormat::Yaml,
+                metadata: Default::default(),
+            })
+        }
+    }
 
     #[tokio::test]
     async fn test_yaml_parser_v2() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -105,7 +149,8 @@ mod tests {
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
-        let parser = YamlParserV2::new(fs.clone());
+        let parse_service = Arc::new(MockParseService);
+        let parser = YamlParserV2::new(parse_service, fs.clone());
 
         // Create a test schema
         let schema_content = r"
@@ -131,7 +176,7 @@ classes:
         fs.write(schema_path, schema_content).await?;
 
         // Parse using async trait - explicitly use AsyncSchemaParser trait
-        let schema = <YamlParserV2<TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(
+        let schema = <YamlParserV2<MockParseService, TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(
             &parser,
             schema_path,
         )

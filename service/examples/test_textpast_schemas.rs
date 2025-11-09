@@ -7,8 +7,11 @@
 //! 3. txp: imports resolve local-first with remote fallback
 //! 4. Validation of complex types like ISO3166Entity
 
-use linkml_service::parser::{ImportResolverV2, SchemaLoader, YamlParser};
+use linkml_service::parser::{ImportResolverV2, Parser, SchemaLoader, SchemaParser};
+use logger_service::wiring::wire_testing_logger;
+use parse_service::NoLinkML;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -39,10 +42,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn test_schema(path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let parser = YamlParser::new();
+    let logger = wire_testing_logger()?.into_arc();
+    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
+    let parse_service = parse_service_handle.into_arc();
+    
+    let parser = Parser::new(parse_service);
     let content = tokio::fs::read_to_string(path).await?;
     
-    let schema = parser.parse_str(&content)?;
+    let schema = parser.parse_str(&content, "yaml").await?;
     
     println!("  ✓ Schema ID: {}", schema.id);
     println!("  ✓ Schema name: {}", schema.name);
@@ -101,7 +108,11 @@ async fn test_instance(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn test_txp_imports() -> Result<(), Box<dyn std::error::Error>> {
-    let loader = SchemaLoader::new();
+    let logger = wire_testing_logger()?.into_arc();
+    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
+    let parse_service = parse_service_handle.into_arc();
+    
+    let loader = SchemaLoader::new(parse_service);
     
     // Load a schema with txp: imports
     let schema = loader.load_file(
@@ -122,12 +133,16 @@ async fn test_txp_imports() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn test_iso3166_validation() -> Result<(), Box<dyn std::error::Error>> {
     // Load the country schema
-    let parser = YamlParser::new();
+    let logger = wire_testing_logger()?.into_arc();
+    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
+    let parse_service = parse_service_handle.into_arc();
+    
+    let parser = Parser::new(parse_service);
     let content = tokio::fs::read_to_string(
         "crates/model/symbolic/schemata/place/polity/country/schema.yaml"
     ).await?;
     
-    let schema = parser.parse_str(&content)?;
+    let schema = parser.parse_str(&content, "yaml").await?;
     
     // Check ISO3166Entity class
     if let Some(iso_class) = schema.classes.get("ISO3166Entity") {

@@ -3,10 +3,12 @@
 //! This module validates configuration files against the `LinkML` configuration schema.
 
 use super::{LinkMLConfig, load_config};
-use crate::parser::{SchemaParser, YamlParser};
+use crate::parser::Parser;
 use crate::validator::{ValidationEngine, ValidationOptions};
 use linkml_core::error::LinkMLError;
+use parse_service::ParseService;
 use std::path::Path;
+use std::sync::Arc;
 
 /// Validate configuration against schema
 /// Returns an error if the operation fails
@@ -18,11 +20,14 @@ use std::path::Path;
 /// - The validator cannot be built
 /// - Configuration serialization fails
 /// - Configuration validation fails
-pub async fn validate_config(config: &LinkMLConfig) -> linkml_core::error::Result<()> {
-    // Load the configuration schema
+pub async fn validate_config(
+    config: &LinkMLConfig,
+    parse_service: Arc<dyn ParseService>,
+) -> linkml_core::error::Result<()> {
+    // Load the configuration schema using centralized parser
     let schema_path = Path::new("config/schema/linkml-config-schema.yaml");
-    let parser = YamlParser::new();
-    let schema = parser.parse_file(schema_path)?;
+    let parser = Parser::new(parse_service);
+    let schema = parser.parse_file(schema_path).await?;
 
     // Build validator
     let validator = ValidationEngine::new(&schema)?;
@@ -64,9 +69,12 @@ pub async fn validate_config(config: &LinkMLConfig) -> linkml_core::error::Resul
 /// Returns an error if:
 /// - The configuration file cannot be loaded
 /// - The configuration fails validation
-pub async fn load_and_validate_config(path: &Path) -> linkml_core::error::Result<LinkMLConfig> {
+pub async fn load_and_validate_config(
+    path: &Path,
+    parse_service: Arc<dyn ParseService>,
+) -> linkml_core::error::Result<LinkMLConfig> {
     let config: LinkMLConfig = load_config(path)?;
-    validate_config(&config).await?;
+    validate_config(&config, parse_service).await?;
     Ok(config)
 }
 

@@ -19,8 +19,8 @@ slots:
       - range: integer
 "#;
 
-    let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml)
+    let parser = linkml_service::parser::Parser::new();
+    let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
     let slot = schema
@@ -48,8 +48,8 @@ slots:
       - pattern: "^\\d+$"
 "#;
 
-    let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml)
+    let parser = linkml_service::parser::Parser::new();
+    let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
     let slot = schema
@@ -79,8 +79,8 @@ slots:
         maximum_value: 1
 "#;
 
-    let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml)
+    let parser = linkml_service::parser::Parser::new();
+    let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
     let slot = schema
@@ -109,8 +109,8 @@ slots:
       - pattern: "^demo"
 "#;
 
-    let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml)
+    let parser = linkml_service::parser::Parser::new();
+    let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
     let slot = schema
@@ -141,8 +141,8 @@ slots:
           - pattern: "^[A-Z]"
 "#;
 
-    let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml)
+    let parser = linkml_service::parser::Parser::new();
+    let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
     let slot = schema
@@ -260,8 +260,8 @@ slots:
       - maximum_value: 10
 "#;
 
-    let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml)
+    let parser = linkml_service::parser::Parser::new();
+    let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
     let slot = schema
@@ -306,8 +306,8 @@ slots:
         inlined_as_list: false
 "#;
 
-    let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml)
+    let parser = linkml_service::parser::Parser::new();
+    let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
     let slot = schema

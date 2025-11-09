@@ -87,6 +87,7 @@ where
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
     random_service: Arc<R>,
+    parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
 }
 
 impl<T, E, C, O, R> LinkMLServiceImpl<T, E, C, O, R>
@@ -104,7 +105,8 @@ where
     /// Returns an error if service creation fails
     pub fn new(deps: LinkMLServiceDependencies<T, E, C, O, R>) -> Result<Self> {
         let default_config = LinkMLConfig::default();
-        let import_resolver = ImportResolver::new();
+        let mut import_resolver = ImportResolver::new();
+        import_resolver.set_parse_service(deps.parse_service.clone());
         let config = Arc::new(RwLock::new(default_config));
 
         // Create validator cache with RootReal cache service integration
@@ -114,7 +116,7 @@ where
 
         Ok(Self {
             config,
-            parser: Parser::new(),
+            parser: Parser::new(deps.parse_service.clone()),
             import_resolver,
             schema_cache: Arc::new(RwLock::new(HashMap::new())),
             validator_cache,
@@ -133,6 +135,7 @@ where
             cache: deps.cache,
             monitor: deps.monitor,
             random_service: deps.random_service,
+            parse_service: deps.parse_service,
         })
     }
 
@@ -155,7 +158,7 @@ where
 
         Ok(Self {
             config,
-            parser: Parser::new(),
+            parser: Parser::new(deps.parse_service.clone()),
             import_resolver,
             schema_cache: Arc::new(RwLock::new(HashMap::new())),
             validator_cache,
@@ -174,6 +177,7 @@ where
             cache: deps.cache,
             monitor: deps.monitor,
             random_service: deps.random_service,
+            parse_service: deps.parse_service,
         })
     }
 
@@ -287,7 +291,7 @@ where
         ];
 
         for (name, content) in builtin_schemas {
-            match self.parser.parse_str(content, "yaml") {
+            match self.parser.parse_str(content, "yaml").await {
                 Ok(schema) => {
                     let mut cache = self.schema_cache.write();
                     cache.insert(name.to_string(), schema);
@@ -792,7 +796,7 @@ where
 
         // Record cache miss
         // Parse the schema with error handling
-        let schema = match self.parser.parse_file(path) {
+        let schema = match self.parser.parse_file(path).await {
             Ok(s) => s,
             Err(e) => {
                 // Record error with error handler
@@ -897,7 +901,7 @@ where
         };
 
         // Parse the schema
-        let schema = match self.parser.parse_str(content, format_str) {
+        let schema = match self.parser.parse_str(content, format_str).await {
             Ok(s) => s,
             Err(e) => {
                 // Track parse error
@@ -1207,6 +1211,7 @@ where
 #[derive(Clone)]
 pub struct MinimalLinkMLServiceImpl {
     parser: Parser,
+    parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
 }
 
 impl MinimalLinkMLServiceImpl {
@@ -1215,9 +1220,12 @@ impl MinimalLinkMLServiceImpl {
     /// # Errors
     ///
     /// Currently this function never fails, but returns a Result for future compatibility
-    pub fn new() -> Result<Self> {
+    pub fn new(
+        parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
+    ) -> Result<Self> {
         Ok(Self {
-            parser: Parser::new(),
+            parser: Parser::new(parse_service.clone()),
+            parse_service,
         })
     }
 }
@@ -1225,7 +1233,7 @@ impl MinimalLinkMLServiceImpl {
 #[async_trait]
 impl LinkMLService for MinimalLinkMLServiceImpl {
     async fn load_schema(&self, path: &Path) -> Result<SchemaDefinition> {
-        self.parser.parse_file(path)
+        self.parser.parse_file(path).await
     }
 
     async fn load_schema_str(
@@ -1237,7 +1245,7 @@ impl LinkMLService for MinimalLinkMLServiceImpl {
             linkml_core::traits::SchemaFormat::Yaml => "yaml",
             linkml_core::traits::SchemaFormat::Json => "json",
         };
-        self.parser.parse_str(content, format_str)
+        self.parser.parse_str(content, format_str).await
     }
 
     async fn validate(
