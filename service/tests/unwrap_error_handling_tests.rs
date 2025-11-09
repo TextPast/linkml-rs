@@ -49,7 +49,7 @@ classes:
       - age  # Missing closing bracket above
 ";
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let result = parser.parse_str(invalid_yaml, "yaml");
 
     // Should return error, not panic
@@ -72,7 +72,7 @@ fn test_parser_handles_invalid_json() {
     }
 }"#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let result = parser.parse_str(invalid_json, "json");
 
     // Should return error, not panic
@@ -270,7 +270,7 @@ slots:
     fs::write(&schema_path, schema_yaml).expect("write schema");
 
     // Parse schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = match parser.parse_file(&schema_path, "yaml") {
         Ok(s) => s,
         Err(e) => {

@@ -1,5 +1,5 @@
 use linkml_service::generator::Generator;
-use linkml_service::parser::Parser;
+use linkml_service::parser::YamlParserSimple;
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::error::Error as StdError;
@@ -32,7 +32,7 @@ slots:
 ";
 
     // Parse the schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse(schema_yaml, "yaml")?;
 
     // Test basic schema structure
@@ -108,7 +108,7 @@ slots:
     pattern: '^[^@]+@[^@]+\.[^@]+$'
 ";
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse(yaml_schema, "yaml")?;
 
     assert_eq!(schema.name, "TestSchema");
@@ -143,7 +143,7 @@ slots:
     range: string
 ";
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse(schema_yaml, "yaml")?;
 
     // Test JSON Schema generation
@@ -196,7 +196,7 @@ slots:
     range: string
 ";
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse(schema_yaml, "yaml")?;
 
     let validation_engine = ValidationEngine::new(&schema)?;
@@ -222,7 +222,7 @@ slots:
 /// Test error handling and recovery
 #[tokio::test]
 async fn test_error_handling() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // Test invalid YAML
     let invalid_yaml = "invalid: yaml: content: [unclosed";
@@ -292,7 +292,7 @@ slots:
                 i, i, i, i
             );
 
-            let parser = Parser::new();
+            let parser = YamlParserSimple::new();
             parser.parse(&schema_yaml, "yaml")
         });
         handles.push(handle);

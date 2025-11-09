@@ -53,8 +53,8 @@ classes:
 "#;
 
     // Parse the schema
-    use linkml_core::parser::SchemaParser;
-    let parser = SchemaParser::new();
+    use linkml_service::parser::{YamlParserSimple, SchemaParser};
+    let parser = YamlParserSimple::new();
     let schema = parser.parse_str(schema_yaml)?;
 
     println!("Loaded schema: {}", schema.name);

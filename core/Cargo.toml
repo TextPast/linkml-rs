@@ -48,6 +48,10 @@ anyhow = { workspace = true }
 configuration_core = { workspace = true }
 timestamp_core = { workspace = true }
 
+# Pest parser
+pest = "2.7"
+pest_derive = "2.7"
+
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }
 pretty_assertions = "1.4"

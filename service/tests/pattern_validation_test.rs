@@ -1,6 +1,6 @@
 //! Tests for enhanced pattern validation with named capture groups
 
-use linkml_service::parser::Parser;
+use linkml_service::parser::YamlParserSimple;
 use linkml_service::validator::{ValidationEngine, validate_as_class};
 use serde_json::json;
 
@@ -41,7 +41,7 @@ slots:
 "#;
 
     // Parse schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -116,7 +116,7 @@ slots:
     pattern: "^v(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?:-(?P<prerelease>[\\w\\.]+))?(?:\\+(?P<build>[\\w\\.]+))?$"
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -164,7 +164,7 @@ slots:
     pattern: "^(?P<country>\\+\\d{1,3})?[\\s-]?(?P<area>\\d{3})[\\s-]?(?P<exchange>\\d{3})[\\s-]?(?P<number>\\d{4})$"
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -226,7 +226,7 @@ slots:
     pattern: "^[A-Z]{2,4}-\\d{4,8}-[A-Z0-9]{6}$"
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");

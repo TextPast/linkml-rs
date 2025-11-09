@@ -4,7 +4,7 @@ use linkml_core::{
     metadata::{Contributor, Example},
     types::{SchemaDefinition, SlotDefinition},
 };
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::{YamlParserSimple, SchemaParser};
 use linkml_core::types::SchemaDefinition;
 use linkml_core::types::{SlotDefinition};
 
@@ -39,7 +39,7 @@ classes:
     name: Person
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
@@ -90,7 +90,7 @@ classes:
       - value: "survey_responses_2023"
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
@@ -157,7 +157,7 @@ slots:
     rank: 10
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");

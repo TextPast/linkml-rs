@@ -2,7 +2,7 @@
 
 use linkml_core::types::SchemaDefinition;
 use linkml_service::factory::create_linkml_service;
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::{YamlParserSimple, SchemaParser};
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::sync::Arc;
@@ -151,7 +151,7 @@ enums:
 "#;
 
     // Parse the schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse_str(biolink_schema, "yaml")?;
 
     // Create test data
@@ -364,7 +364,7 @@ types:
 "#;
 
     // Parse the schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse_str(fair_schema, "yaml")?;
 
     // Create test data
@@ -506,7 +506,7 @@ types:
     base: float
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse_str(schema_yaml, "yaml")?;
     let engine = ValidationEngine::new(Arc::new(schema));
 
@@ -627,7 +627,7 @@ types:
     base: float
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse_str(schema_yaml, "yaml")?;
     let engine = ValidationEngine::new(Arc::new(schema));
 

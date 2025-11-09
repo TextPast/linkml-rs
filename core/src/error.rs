@@ -1,5 +1,6 @@
 //! Error types for `LinkML` operations
 
+use pest;
 use thiserror::Error;
 use timestamp_core;
 
@@ -247,6 +248,32 @@ impl From<regex::Error> for LinkMLError {
             message: err.to_string(),
             pattern: None,
             value: None,
+        }
+    }
+}
+
+// Pest parsing error conversion
+impl<R> From<pest::error::Error<R>> for LinkMLError
+where
+    R: pest::RuleType,
+{
+    fn from(err: pest::error::Error<R>) -> Self {
+        // Extract location information from Pest error
+        let location = match err.line_col {
+            pest::error::LineColLocation::Pos((line, col)) => {
+                Some(format!("line {}, column {}", line, col))
+            }
+            pest::error::LineColLocation::Span((start_line, start_col), (end_line, end_col)) => {
+                Some(format!(
+                    "line {} column {} to line {} column {}",
+                    start_line, start_col, end_line, end_col
+                ))
+            }
+        };
+
+        Self::ParseError {
+            message: format!("Pest parsing error: {}", err),
+            location,
         }
     }
 }

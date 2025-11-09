@@ -1,6 +1,6 @@
 //! Parser tests for LinkML service
 
-use linkml_service::parser::Parser;
+use linkml_service::parser::YamlParserSimple;
 use std::fs;
 use tempfile::TempDir;
 
@@ -37,7 +37,7 @@ slots:
     fs::write(&schema_path, yaml_content).expect("Test operation failed");
 
     // Test parsing
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_file(&schema_path)
         .expect("Test operation failed");
@@ -98,7 +98,7 @@ fn test_parse_json_schema() {
     fs::write(&schema_path, json_content).expect("Test operation failed");
 
     // Test parsing
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_file(&schema_path)
         .expect("Test operation failed");
@@ -149,7 +149,7 @@ slots:
     let schema_path = temp_dir.path().join("test_schema.yaml");
     fs::write(&schema_path, yaml_content).expect("Test operation failed");
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_file(&schema_path)
         .expect("Test operation failed");
@@ -180,7 +180,7 @@ fn test_parse_invalid_yaml() {
     let schema_path = temp_dir.path().join("invalid.yaml");
     fs::write(&schema_path, yaml_content).expect("Test operation failed");
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let result = parser.parse_file(&schema_path);
 
     assert!(result.is_err());
@@ -193,7 +193,7 @@ id: https://example.org/test
 name: direct_parse_test
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(yaml, "yaml")
         .expect("Test operation failed");

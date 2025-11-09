@@ -94,7 +94,7 @@ fn test_expression_injection_function_in_variable() {
 #[test]
 fn test_code_injection_javascript_syntax() {
     // Attack: Try JavaScript-like code injection
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // JavaScript function syntax should fail
     assert!(parser.parse("function() { return 42; }").is_err());
@@ -106,7 +106,7 @@ fn test_code_injection_javascript_syntax() {
 #[test]
 fn test_code_injection_python_syntax() {
     // Attack: Try Python-like code injection
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // Python syntax should fail
     assert!(parser.parse("__import__('os').system('ls')").is_err());
@@ -118,7 +118,7 @@ fn test_code_injection_python_syntax() {
 #[test]
 fn test_code_injection_shell_commands() {
     // Attack: Try shell command injection
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // Shell syntax should fail
     assert!(parser.parse("$(ls -la)").is_err());
@@ -365,7 +365,7 @@ fn test_unicode_zalgo_text() {
 #[test]
 fn test_path_traversal_in_variable_names() {
     // Attack: Try path traversal patterns in variable names
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // These should all fail to parse
     assert!(parser.parse("{../../../etc/passwd}").is_err());
@@ -377,7 +377,7 @@ fn test_path_traversal_in_variable_names() {
 #[test]
 fn test_path_traversal_url_encoding() {
     // Attack: Try URL-encoded path traversal
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     assert!(parser.parse("{%2e%2e%2f%2e%2e%2f}").is_err());
     assert!(parser.parse("{%2fetc%2fpasswd}").is_err());
@@ -388,7 +388,7 @@ fn test_path_traversal_url_encoding() {
 #[test]
 fn test_sql_injection_patterns() {
     // Attack: Try SQL injection patterns
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // SQL keywords and syntax should fail
     assert!(parser.parse("SELECT * FROM users").is_err());
@@ -445,7 +445,7 @@ fn test_printf_style_formats() {
 #[test]
 fn test_parser_unclosed_constructs() {
     // Attack: Try to break parser with unclosed constructs
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // Unclosed strings
     assert!(parser.parse("\"unclosed string").is_err());
@@ -467,7 +467,7 @@ fn test_parser_unclosed_constructs() {
 #[test]
 fn test_parser_invalid_characters() {
     // Attack: Try invalid characters in various contexts
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // Control characters
     assert!(parser.parse("\x00").is_err());
@@ -482,7 +482,7 @@ fn test_parser_invalid_characters() {
 #[test]
 fn test_parser_extremely_long_input() {
     // Attack: Try extremely long input
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // Very long variable name
     let long_var = format!("{{{}}}", "a".repeat(10000));
@@ -660,7 +660,7 @@ fn test_regex_redos_preparation() {
 #[test]
 fn test_command_injection_keywords() {
     // Ensure potential command keywords are not valid function names
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     let dangerous_keywords = vec![
         "exec", "eval", "system", "spawn", "fork", "import", "require", "include", "open", "read",

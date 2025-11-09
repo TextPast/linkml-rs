@@ -1,6 +1,6 @@
 //! Tests for parsing rules from YAML schemas
 
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::{YamlParserSimple, SchemaParser};
 
 #[test]
 fn test_parse_simple_rule() {
@@ -46,7 +46,7 @@ slots:
     range: string
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse_str(yaml_content, "yaml").expect("Failed to parse schema");
 
     // Verify schema basics
@@ -169,7 +169,7 @@ slots:
     range: string
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Failed to parse complex schema");
@@ -259,7 +259,7 @@ slots:
     range: string
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Failed to parse conditional requirements");

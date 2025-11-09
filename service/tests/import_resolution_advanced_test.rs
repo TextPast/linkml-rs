@@ -75,7 +75,7 @@ classes:
     // Create resolver and load schema
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let mut schema = parser
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
@@ -174,7 +174,7 @@ classes:
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let mut schema = parser
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("schema_a.yaml"))
@@ -254,7 +254,7 @@ classes:
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let mut schema = parser
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("selective.yaml"))
@@ -341,7 +341,7 @@ classes:
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let mut schema = parser
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
@@ -410,7 +410,7 @@ classes:
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let mut schema = parser
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
@@ -466,7 +466,7 @@ settings:
             .await
             ?;
 
-        let parser = linkml_service::parser::Parser::new();
+        let parser = linkml_service::parser::YamlParserSimple::new();
         let schema = parser
             .parse_str(
                 &tokio::fs::read_to_string(base_path.join(&filename))
@@ -504,7 +504,7 @@ imports:
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let mut schema = parser
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("bad.yaml"))
@@ -593,7 +593,7 @@ imports:
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let mut schema = parser
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))

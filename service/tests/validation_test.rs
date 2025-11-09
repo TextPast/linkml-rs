@@ -41,7 +41,7 @@ slots:
 "#;
 
     // Parse schema
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -117,7 +117,7 @@ slots:
     range: date
 "#;
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -163,7 +163,7 @@ slots:
     pattern: "^\\+?[0-9]{10,15}$"
 "#;
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -219,7 +219,7 @@ slots:
     maximum_value: "100"
 "#;
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -274,7 +274,7 @@ slots:
     range: StatusEnum
 "#;
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -336,7 +336,7 @@ slots:
     unique: true
 "#;
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let schema = parser.parse(schema_yaml, "yaml").expect("Test operation failed");
 
     // Test cardinality
@@ -397,7 +397,7 @@ slots:
     range: integer
 "#;
 
-    let parser = linkml_service::parser::Parser::new();
+    let parser = linkml_service::parser::YamlParserSimple::new();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");

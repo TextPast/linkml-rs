@@ -132,6 +132,12 @@ pub mod hashmap_utils;
 /// Arc-based schema handling
 pub mod schema_arc;
 
+/// Abstract Syntax Tree (AST) types for LinkML schemas
+pub mod ast;
+
+/// Pest-based LinkML parser implementation
+pub mod parser;
+
 // Re-export commonly used types
 pub use config::LinkMLConfig;
 pub use configuration_v2::LinkMLServiceConfig;
@@ -146,8 +152,10 @@ pub use types::{
 
 /// Prelude module for convenient imports
 pub mod prelude {
+    pub use crate::ast::*;
     pub use crate::config::LinkMLConfig;
     pub use crate::error::{LinkMLError, Result};
+    pub use crate::parser::{LinkMLParser, Rule};
     pub use crate::settings::*;
     pub use crate::traits::*;
     pub use crate::types::*;

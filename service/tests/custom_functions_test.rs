@@ -50,7 +50,7 @@ fn test_custom_function_in_expression() {
         ));
 
     // Parse and evaluate expression with custom function
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let expr = parser
         .parse("reverse(name)")
         .expect("Test operation failed");
@@ -90,7 +90,7 @@ fn test_custom_math_function() {
         ));
 
     // Test with integer
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let expr = parser.parse("square(5)").expect("Test operation failed");
     let result = evaluator
         .evaluate(&expr, &std::collections::HashMap::new())
@@ -133,7 +133,7 @@ fn test_custom_function_with_multiple_args() {
         ));
 
     // Test with 2 arguments
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let expr = parser
         .parse(r#"join("Hello", "World")"#)
         .expect("Test operation failed");
@@ -171,7 +171,7 @@ fn test_custom_validation_function() {
         }));
 
     // Test valid email
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let expr = parser
         .parse(r#"is_email("user@example.com")"#)
         .expect("Test operation failed");
@@ -264,7 +264,7 @@ fn test_custom_function_list_operations() {
         }));
 
     // Test sum function
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let expr = parser.parse("sum(numbers)").expect("Test operation failed");
 
     let mut context = std::collections::HashMap::new();
@@ -322,7 +322,7 @@ fn test_custom_function_chaining() {
         ));
 
     // Test function chaining: add_one(double(5)) = add_one(10) = 11
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let expr = parser
         .parse("add_one(double(5))")
         .expect("Test operation failed");

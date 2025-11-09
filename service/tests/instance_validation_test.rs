@@ -1,6 +1,6 @@
 //! Tests for instance-based validation
 
-use linkml_service::parser::Parser;
+use linkml_service::parser::YamlParserSimple;
 use linkml_service::validator::{
     InstanceConfig, InstanceLoader, ValidationEngine, validate_as_class,
 };
@@ -72,7 +72,7 @@ slots:
     .expect("Test operation failed");
 
     // Parse schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -169,7 +169,7 @@ WOMN,Womens,CLOT
         .await
         .expect("Test operation failed");
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let _schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -241,7 +241,7 @@ slots:
     .await
     .expect("Test operation failed");
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");

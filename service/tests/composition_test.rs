@@ -1,6 +1,6 @@
 //! Tests for schema composition and inheritance
 
-use linkml_service::parser::Parser;
+use linkml_service::parser::YamlParserSimple;
 use linkml_service::validator::{SchemaComposer, validate_as_class};
 use serde_json::json;
 
@@ -82,7 +82,7 @@ slots:
 "#;
 
     // Parse schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -202,7 +202,7 @@ slots:
     range: string
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -273,7 +273,7 @@ slots:
     range: string
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -346,7 +346,7 @@ slots:
     range: string
 "#;
 
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");

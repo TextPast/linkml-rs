@@ -263,14 +263,14 @@ class_recursion_options = {
 }
 
 // Class Metadata
-class_aliases = { list_field("aliases") }
-class_see_also = { list_field("see_also") }
-class_id_prefixes = { list_field("id_prefixes") }
-class_broad_mappings = { list_field("broad_mappings") }
-class_exact_mappings = { list_field("exact_mappings") }
-class_narrow_mappings = { list_field("narrow_mappings") }
-class_related_mappings = { list_field("related_mappings") }
-class_close_mappings = { list_field("close_mappings") }
+class_aliases = { "aliases" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+class_see_also = { "see_also" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+class_id_prefixes = { "id_prefixes" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+class_broad_mappings = { "broad_mappings" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+class_exact_mappings = { "exact_mappings" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+class_narrow_mappings = { "narrow_mappings" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+class_related_mappings = { "related_mappings" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+class_close_mappings = { "close_mappings" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
 
 // ============================================================================
 // Slots
@@ -375,8 +375,8 @@ slot_imports = {
     INDENT ~ import_entry+ ~ DEDENT?
 }
 
-slot_aliases = { list_field("aliases") }
-slot_see_also = { list_field("see_also") }
+slot_aliases = { "aliases" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+slot_see_also = { "see_also" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
 
 // ============================================================================
 // Types
@@ -458,8 +458,8 @@ permissible_value_field = {
 
 pv_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | string_value) }
 pv_meaning = { "meaning" ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE }
-pv_aliases = { list_field("aliases") }
-pv_see_also = { list_field("see_also") }
+pv_aliases = { "aliases" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+pv_see_also = { "see_also" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
 
 // ============================================================================
 // Subsets
@@ -486,14 +486,12 @@ subset_description = { "description" ~ ":" ~ WHITESPACE* ~ (block_string | strin
 // Annotations (arbitrary key-value metadata)
 // ============================================================================
 
-schema_annotations = { annotations("annotations") }
-class_annotations = { annotations("annotations") }
-type_annotations = { annotations("annotations") }
-enum_annotations = { annotations("annotations") }
-subset_annotations = { annotations("annotations") }
-slot_annotations = { annotations("annotations") }
-
-annotations = { field_name ~ ":" ~ NEWLINE ~ INDENT ~ annotation_entry+ ~ DEDENT? }
+schema_annotations = { "annotations" ~ ":" ~ NEWLINE ~ INDENT ~ annotation_entry+ ~ DEDENT? }
+class_annotations = { "annotations" ~ ":" ~ NEWLINE ~ INDENT ~ annotation_entry+ ~ DEDENT? }
+type_annotations = { "annotations" ~ ":" ~ NEWLINE ~ INDENT ~ annotation_entry+ ~ DEDENT? }
+enum_annotations = { "annotations" ~ ":" ~ NEWLINE ~ INDENT ~ annotation_entry+ ~ DEDENT? }
+subset_annotations = { "annotations" ~ ":" ~ NEWLINE ~ INDENT ~ annotation_entry+ ~ DEDENT? }
+slot_annotations = { "annotations" ~ ":" ~ NEWLINE ~ INDENT ~ annotation_entry+ ~ DEDENT? }
 
 annotation_entry = {
     identifier ~ ":" ~ WHITESPACE* ~ (annotation_value | NEWLINE ~ INDENT ~ annotation_value ~ DEDENT?) ~ NEWLINE?
@@ -537,9 +535,9 @@ contributor_entry = {
     (WHITESPACE* ~ "orcid" ~ ":" ~ WHITESPACE* ~ uri ~ NEWLINE)?
 }
 
-schema_categories = { list_field("categories") }
-schema_keywords = { list_field("keywords") }
-schema_see_also = { list_field("see_also") }
+schema_categories = { "categories" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+schema_keywords = { "keywords" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
+schema_see_also = { "see_also" ~ ":" ~ NEWLINE ~ INDENT ~ string_list_entry+ ~ DEDENT? }
 
 // ============================================================================
 // Generic List Field Helper

@@ -135,7 +135,7 @@ async fn test_biomedical_research_workflow() {
     let start = Instant::now();
 
     // Parse schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse(BIOMEDICAL_SCHEMA, "yaml").expect("LinkML operation in test should succeed");
     println!("✓ Schema parsed in {:?}", start.elapsed());
 
@@ -225,7 +225,7 @@ classes:
 "#;
 
     // Parse schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser.parse(schema_yaml, "yaml").expect("LinkML operation in test should succeed");
 
     // Valid data

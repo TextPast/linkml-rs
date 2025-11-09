@@ -1,6 +1,6 @@
 //! Debug test for pattern resolution issue
 
-use linkml_service::parser::Parser;
+use linkml_service::parser::YamlParserSimple;
 use linkml_service::validator::{ValidationEngine, ValidationOptions};
 use serde_json::json;
 
@@ -34,7 +34,7 @@ slots:
 "#;
 
     // Parse schema
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("LinkML operation in test should succeed");

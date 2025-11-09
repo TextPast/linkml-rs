@@ -415,7 +415,7 @@ async fn test_timeout_scenarios() -> Result<()> {
 #[tokio::test]
 async fn test_io_failure_scenarios() -> Result<()> {
     // Test schema loading from invalid sources
-    let parser = Parser::new();
+    let parser = YamlParserSimple::new();
 
     // Test with invalid YAML
     let invalid_yaml = "{ invalid: yaml: content: [unclosed";

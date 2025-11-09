@@ -24,14 +24,18 @@ use std::sync::Arc;
 pub mod factory;
 pub mod import_resolver;
 pub mod import_resolver_v2;
+pub mod json_parser_simple;
 pub mod json_parser_v2;
 pub mod schema_loader;
+pub mod yaml_parser_simple;
 pub mod yaml_parser_v2;
 
 pub use import_resolver::ImportResolver;
 pub use import_resolver_v2::{ImportResolverV2, ImportSpec};
+pub use json_parser_simple::JsonParserSimple;
 pub use json_parser_v2::JsonParserV2;
 pub use schema_loader::SchemaLoader;
+pub use yaml_parser_simple::YamlParserSimple;
 pub use yaml_parser_v2::{AsyncSchemaParser, YamlParserV2};
 
 /// Trait for schema parsers

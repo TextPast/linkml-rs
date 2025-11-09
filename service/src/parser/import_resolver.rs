@@ -66,19 +66,6 @@ impl ImportResolver {
     ) {
         self.parse_service = Some(parse_service);
     }
-    }
-
-    /// Create with specific search paths
-    #[must_use]
-    pub fn with_search_paths(search_paths: Vec<PathBuf>) -> Self {
-        Self {
-            cache: Arc::new(RwLock::new(HashMap::new())),
-            search_paths: Arc::new(RwLock::new(search_paths)),
-            base_path: Arc::new(RwLock::new(None)),
-            base_url: Arc::new(RwLock::new(None)),
-            max_depth: 10,
-        }
-    }
 
     /// Set the base path for relative imports
     pub fn set_base_path(&self, path: &Path) {
