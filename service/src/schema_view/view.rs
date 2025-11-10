@@ -108,7 +108,7 @@ impl SchemaView {
     pub async fn load_from_file(path: impl AsRef<Path>) -> Result<Self> {
         let loader = SchemaLoader::new();
         let schema = loader.load_file(path).await?;
-        Self::new(schema)
+        Self::new(schema).await
     }
 
     /// Load a schema from a `URL`
@@ -119,7 +119,7 @@ impl SchemaView {
     pub async fn load_from_url(url: &str) -> Result<Self> {
         let loader = SchemaLoader::new();
         let schema = loader.load_url(url).await?;
-        Self::new(schema)
+        Self::new(schema).await
     }
 
     // === Class Operations ===
