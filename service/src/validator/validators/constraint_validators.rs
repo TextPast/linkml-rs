@@ -4,7 +4,7 @@ use super::utils::value_type;
 use super::{ValidationContext, ValidationIssue, Validator};
 use crate::utils::safe_cast::u64_to_f64_lossy;
 use linkml_core::annotations::AnnotationValue;
-use linkml_core::types::{ClassDefinition, Rule, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;

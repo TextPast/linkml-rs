@@ -1,6 +1,6 @@
 //! Schema loader for loading schemas from files and URLs
 
-use crate::file_system_adapter::TokioFileSystemAdapter;
+use crate::file_system_adapter::{FileSystemOperations, TokioFileSystemAdapter};
 use linkml_core::{
     error::{LinkMLError, Result},
     settings::ImportSettings,
@@ -9,7 +9,6 @@ use linkml_core::{
 use reqwest;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tokio::fs;
 
 use super::{AsyncSchemaParser, ImportResolverV2, YamlParserV2};
 
@@ -89,8 +88,8 @@ impl SchemaLoader {
     pub async fn load_file(&self, path: impl AsRef<Path>) -> Result<SchemaDefinition> {
         let path = path.as_ref();
 
-        // Read file content
-        let content = fs::read_to_string(path)
+        // Read file content using injected fs_adapter for consistency with V2 architecture
+        let content = self.fs_adapter.read_to_string(path)
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to read file: {e}")))?;
 

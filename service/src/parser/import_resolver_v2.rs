@@ -13,7 +13,6 @@ use linkml_core::{
     settings::{ImportResolutionStrategy, ImportSettings},
     types::{ClassDefinition, SchemaDefinition, SlotDefinition},
 };
-use parse_core::ParseService;
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::future::Future;
