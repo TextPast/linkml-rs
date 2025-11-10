@@ -6,7 +6,8 @@
 use anyhow::Result;
 use linkml_core::prelude::*;
 use linkml_service::generator::PythonDataclassGenerator;
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::{YamlParserV2, SchemaParser};
+use linkml_service::file_system_adapter::TokioFileSystemAdapter;
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::sync::Arc;
@@ -66,8 +67,9 @@ enums:
         description: Temporarily unavailable
 "#;
 
-    let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(schema_yaml)?;
     println!("✓ Parsed schema '{}'", schema.name);
     Ok(schema)
 }

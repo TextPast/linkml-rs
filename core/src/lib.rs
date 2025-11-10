@@ -155,7 +155,7 @@ pub mod prelude {
     pub use crate::ast::*;
     pub use crate::config::LinkMLConfig;
     pub use crate::error::{LinkMLError, Result};
-    pub use crate::parser::{LinkMLParser, Rule};
+    pub use crate::parser::{LinkMLParser, Rule as ParserRule};
     pub use crate::settings::*;
     pub use crate::traits::*;
     pub use crate::types::*;

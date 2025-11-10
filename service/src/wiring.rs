@@ -99,6 +99,7 @@ use timestamp_core::{TimestampError, TimestampService};
 /// * `cache` - Cache service for schema caching
 /// * `monitor` - Monitoring service for metrics collection
 /// * `random_service` - Random service for non-deterministic operations
+/// * `parse_service` - Parse service for YAML/JSON schema parsing
 ///
 /// # Returns
 ///
@@ -143,6 +144,7 @@ use timestamp_core::{TimestampError, TimestampService};
 /// let cache = wire_cache(logger.clone().into_arc()).await?;
 /// let monitor = wire_monitoring(logger.clone().into_arc()).await?;
 /// let random = wire_random(logger.clone().into_arc())?;
+/// let parse = wire_parse(logger.clone().into_arc())?;
 ///
 /// // Wire LinkML service
 /// let linkml = wire_linkml_service(
@@ -156,6 +158,7 @@ use timestamp_core::{TimestampError, TimestampService};
 ///     cache.into_arc(),
 ///     monitor.into_arc(),
 ///     random.into_arc(),
+///     parse.into_arc(),
 /// ).await?;
 ///
 /// // Use LinkML service
@@ -164,7 +167,7 @@ use timestamp_core::{TimestampError, TimestampService};
 /// # }
 /// ```
 #[allow(clippy::too_many_arguments)]
-pub async fn wire_linkml_service<T, E, C, O, R>(
+pub async fn wire_linkml_service<T, E, C, O, R, P>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     task_manager: Arc<T>,
@@ -175,13 +178,15 @@ pub async fn wire_linkml_service<T, E, C, O, R>(
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
     random_service: Arc<R>,
-) -> Result<LinkMLHandle<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<LinkMLHandle<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: parse_core::ParseService + Send + Sync + 'static,
 {
     // Load configuration from configuration service
     let service_config =
@@ -202,6 +207,7 @@ where
         cache,
         monitor,
         random_service,
+        parse_service,
     };
 
     // Create service
@@ -231,6 +237,7 @@ where
 /// * `cache` - Cache service for schema caching
 /// * `monitor` - Monitoring service for metrics collection
 /// * `random_service` - Random service for non-deterministic operations
+/// * `parse_service` - Parse service for YAML/JSON schema parsing
 ///
 /// # Returns
 ///
@@ -265,6 +272,7 @@ where
 /// # let cache = todo!();
 /// # let monitor = todo!();
 /// # let random_service = todo!();
+/// # let parse_service = todo!();
 ///
 /// let linkml = wire_linkml_service_with_config(
 ///     config,
@@ -278,12 +286,13 @@ where
 ///     cache,
 ///     monitor,
 ///     random_service,
+///     parse_service,
 /// ).await?;
 /// # Ok(())
 /// # }
 /// ```
 #[allow(clippy::too_many_arguments)]
-pub async fn wire_linkml_service_with_config<T, E, C, O, R>(
+pub async fn wire_linkml_service_with_config<T, E, C, O, R, P>(
     config: LinkMLConfig,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
@@ -295,13 +304,15 @@ pub async fn wire_linkml_service_with_config<T, E, C, O, R>(
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
     random_service: Arc<R>,
-) -> Result<LinkMLHandle<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<LinkMLHandle<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: parse_core::ParseService + Send + Sync + 'static,
 {
     // Create dependencies struct
     let deps = crate::factory::LinkMLServiceDependencies {
@@ -315,6 +326,7 @@ where
         cache,
         monitor,
         random_service,
+        parse_service,
     };
 
     // Create service with custom config

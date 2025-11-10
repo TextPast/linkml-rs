@@ -159,7 +159,7 @@ fn test_iso3166_identifier_validation() {
 
 #[test]
 fn test_slot_usage_scoped_imports() {
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
     let content = std::fs::read_to_string(&path)
         .expect("Failed to read country schema");
@@ -209,7 +209,7 @@ fn test_all_schemas_parse_successfully() {
         "crates/model/symbolic/schemata/place/polity/country/schema.yaml",
     ];
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let repo_root = get_repo_root();
 
     for path_str in schema_paths {
@@ -231,7 +231,7 @@ fn test_all_schemas_parse_successfully() {
 #[test]
 fn test_schema_metadata_conventions() {
     // Test that schemas follow the new metadata conventions
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let path = get_repo_root().join("crates/model/symbolic/schemata/place/polity/country/schema.yaml");
     let content = std::fs::read_to_string(&path)
         .expect("Failed to read country schema");

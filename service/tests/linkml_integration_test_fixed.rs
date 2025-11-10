@@ -9,10 +9,11 @@ use crate::factory::create_logger_service;
 use linkml_service::{
     LinkMLServiceImpl, create_linkml_service,
     generator::{Generator, GeneratorOptions},
-    parser::Parser,
+    parser::{Parser, SchemaParser, YamlParserV2},
     schema_view::SchemaView,
     validator::ValidationOptions,
 };
+use linkml_core::io::TokioFileSystemAdapter;
 use mock_services::*;
 use serde_json::json;
 use std::sync::Arc;
@@ -93,6 +94,12 @@ enums:
         description: Millimoles per liter
 "#;
 
+/// Helper function to create test parser
+fn create_test_parser() -> impl SchemaParser {
+    let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+    YamlParserV2::new(fs_adapter)
+}
+
 /// Helper function to create test service
 async fn create_test_service() -> Arc<
     LinkMLServiceImpl<
@@ -135,7 +142,7 @@ async fn test_biomedical_research_workflow() {
     let start = Instant::now();
 
     // Parse schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(BIOMEDICAL_SCHEMA, "yaml").expect("LinkML operation in test should succeed");
     println!("✓ Schema parsed in {:?}", start.elapsed());
 
@@ -225,7 +232,7 @@ classes:
 "#;
 
     // Parse schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(schema_yaml, "yaml").expect("LinkML operation in test should succeed");
 
     // Valid data

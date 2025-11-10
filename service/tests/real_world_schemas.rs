@@ -151,7 +151,7 @@ enums:
 "#;
 
     // Parse the schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse_str(biolink_schema, "yaml")?;
 
     // Create test data
@@ -364,7 +364,7 @@ types:
 "#;
 
     // Parse the schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse_str(fair_schema, "yaml")?;
 
     // Create test data
@@ -506,7 +506,7 @@ types:
     base: float
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse_str(schema_yaml, "yaml")?;
     let engine = ValidationEngine::new(Arc::new(schema));
 
@@ -627,7 +627,7 @@ types:
     base: float
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse_str(schema_yaml, "yaml")?;
     let engine = ValidationEngine::new(Arc::new(schema));
 

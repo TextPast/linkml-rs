@@ -119,7 +119,7 @@ slots:
     range: Identifier
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser
         .parse_str(main_schema, "yaml")
         ?;
@@ -213,7 +213,7 @@ slots:
     multivalued: true
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser
         .parse_str(main_schema, "yaml")
         ?;
@@ -306,7 +306,7 @@ classes:
     description: Uses both status types
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser
         .parse_str(main_schema, "yaml")
         ?;
@@ -394,7 +394,7 @@ slots:
     range: Location
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser
         .parse_str(main_schema, "yaml")
         ?;
@@ -477,7 +477,7 @@ imports:
         .await
         ?;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser
         .parse_str(main_schema, "yaml")
         ?;
@@ -635,7 +635,7 @@ classes:
             ?;
     }
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser
         .parse_str(&format!(
             r#"
@@ -734,7 +734,7 @@ imports:
   - b
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser
         .parse_str(main_schema, "yaml")
         ?;

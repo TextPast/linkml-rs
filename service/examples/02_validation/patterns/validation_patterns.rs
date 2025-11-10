@@ -9,9 +9,12 @@
 
 use linkml_core::prelude::*;
 use linkml_service::prelude::*;
-use linkml_service::parser::{Parser, SchemaParser};
-use logger_service::wiring::wire_testing_logger;
-use parse_service::NoLinkML;
+use linkml_service::parser::YamlParserV2;
+use linkml_service::file_system_adapter::TokioFileSystemAdapter;
+use linkml_service::wiring::wire_minimal_linkml_service;
+use timestamp_service::wiring::wire_timestamp;
+use random_service::wiring::wire_random;
+use logger_service::wiring::wire_logger;
 use serde_json::json;
 use std::sync::Arc;
 
@@ -214,16 +217,23 @@ enums:
         description: Books and publications
 "#;
 
-    // Parse schema
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
-    let parse_service = parse_service_handle.into_arc();
-    
-    let parser = Parser::new(parse_service);
-    let schema = parser.parse_str(schema_yaml, "yaml").await?;
+    // Parse schema using V2 parser
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(schema_yaml)?;
 
-    // Create LinkML service
-    let service = create_linkml_service().await?;
+    // Create minimal LinkML service (sufficient for validation)
+    let timestamp = wire_timestamp();
+    let logger = wire_logger(
+        timestamp.clone().into_inner(),
+        logger_core::LoggerConfig::default(),
+    )?;
+    let random = wire_random(logger.into_inner(), timestamp.clone().into_inner(), None);
+    let service_handle = wire_minimal_linkml_service(
+        timestamp.into_arc(),
+        random.into_arc(),
+    )?;
+    let service = service_handle.into_arc();
 
     // Example 1: Valid person data
     println!("Example 1: Valid Person Data");

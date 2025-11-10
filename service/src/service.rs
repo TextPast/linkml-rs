@@ -17,12 +17,111 @@ use crate::config::configuration_integration::{
 };
 use crate::factory::LinkMLServiceDependencies;
 use crate::integration::CacheServiceAdapter;
-use crate::parser::{ImportResolver, Parser};
+use crate::file_system_adapter::TokioFileSystemAdapter;
+use crate::parser::{AsyncSchemaParser, ImportResolver, SchemaParser, YamlParserV2, JsonParserV2};
+use parse_core::ParseService;
+use parse_service::{NoLinkML, ParseServiceImpl};
 use crate::validator::cache::CompiledValidatorCache;
 
 use parking_lot::RwLock;
 use serde_json::json;
 use std::collections::HashMap;
+
+/// Placeholder ParseService for minimal LinkML usage without full parse infrastructure
+#[derive(Debug, Clone)]
+pub struct NoParseService;
+
+#[async_trait]
+impl ParseService for NoParseService {
+    type Error = parse_core::error::ParseError;
+
+    async fn parse(&self, _content: &str) -> std::result::Result<parse_core::types::ParsedDocument, Self::Error> {
+        Err(parse_core::error::ParseError::ServiceDependencyError {
+            service: "ParseService".to_string(),
+            error: "ParseService not available in minimal LinkML service".to_string(),
+        })
+    }
+
+    async fn parse_with_format(
+        &self,
+        _content: &str,
+        _format: parse_core::types::ParseFormat,
+    ) -> std::result::Result<parse_core::types::ParsedDocument, Self::Error> {
+        Err(parse_core::error::ParseError::ServiceDependencyError {
+            service: "ParseService".to_string(),
+            error: "ParseService not available in minimal LinkML service".to_string(),
+        })
+    }
+
+    async fn detect_format(&self, _content: &str) -> std::result::Result<(parse_core::types::ParseFormat, f64), Self::Error> {
+        Err(parse_core::error::ParseError::ServiceDependencyError {
+            service: "ParseService".to_string(),
+            error: "ParseService not available in minimal LinkML service".to_string(),
+        })
+    }
+
+    async fn parse_oai_pmh_harvest_session(
+        &self,
+        _content: &str,
+    ) -> std::result::Result<parse_core::oai_pmh_types::OaiPmhHarvestSession, Self::Error> {
+        Err(parse_core::error::ParseError::ServiceDependencyError {
+            service: "ParseService".to_string(),
+            error: "ParseService not available in minimal LinkML service".to_string(),
+        })
+    }
+
+    async fn parse_oai_pmh_records(
+        &self,
+        _oai_pmh_response: &str,
+    ) -> std::result::Result<Vec<parse_core::oai_pmh_types::OaiPmhRecord>, Self::Error> {
+        Err(parse_core::error::ParseError::ServiceDependencyError {
+            service: "ParseService".to_string(),
+            error: "ParseService not available in minimal LinkML service".to_string(),
+        })
+    }
+
+    async fn parse_with_profile(
+        &self,
+        _content: &str,
+        _format: parse_core::types::ParseFormat,
+        _profile: &parse_core::types::ExtractionProfile,
+    ) -> std::result::Result<parse_core::types::ExtractedData, Self::Error> {
+        Err(parse_core::error::ParseError::ServiceDependencyError {
+            service: "ParseService".to_string(),
+            error: "ParseService not available in minimal LinkML service".to_string(),
+        })
+    }
+
+    async fn parse_csv_with_options(
+        &self,
+        _content: &str,
+        _options: parse_core::types::CsvOptions,
+    ) -> std::result::Result<parse_core::types::ParsedDocument, Self::Error> {
+        Err(parse_core::error::ParseError::ServiceDependencyError {
+            service: "ParseService".to_string(),
+            error: "ParseService not available in minimal LinkML service".to_string(),
+        })
+    }
+
+    async fn validate_document(
+        &self,
+        _document: &parse_core::types::ParsedDocument,
+        _schema_name: Option<&str>,
+    ) -> std::result::Result<parse_core::types::ValidationResult, Self::Error> {
+        Err(parse_core::error::ParseError::ServiceDependencyError {
+            service: "ParseService".to_string(),
+            error: "ParseService not available in minimal LinkML service".to_string(),
+        })
+    }
+
+    async fn health_check(&self) -> std::result::Result<bool, Self::Error> {
+        Ok(false)
+    }
+
+    async fn reload_configuration(&self) -> std::result::Result<(), Self::Error> {
+        Ok(())
+    }
+}
 
 // RootReal service dependencies
 use cache_core::CacheService;
@@ -44,21 +143,24 @@ use timestamp_core::{TimestampError, TimestampService};
 /// - `C`: `ConfigurationService` implementation
 /// - `O`: `TimeoutService` implementation
 /// - `R`: `RandomService` implementation
+/// - `P`: `ParseService` implementation
 ///
 /// `DBMSService` is dyn-compatible and uses `Arc<dyn DBMSService>` pattern
-pub struct LinkMLServiceImpl<T, E, C, O, R>
+pub struct LinkMLServiceImpl<T, E, C, O, R, P>
 where
     T: TaskManagementService,
     E: ObjectSafeErrorHandler,
     C: ConfigurationService + 'static,
     O: TimeoutService,
     R: RandomService,
+    P: ParseService,
 {
     // Configuration
     config: Arc<RwLock<LinkMLConfig>>,
 
-    // Parser instance
-    parser: Parser,
+    // V2 Parser instances (format-specific)
+    yaml_parser: YamlParserV2<TokioFileSystemAdapter>,
+    json_parser: JsonParserV2<P, TokioFileSystemAdapter>,
 
     // Import resolver
     import_resolver: ImportResolver,
@@ -87,26 +189,25 @@ where
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
     random_service: Arc<R>,
-    parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
 }
 
-impl<T, E, C, O, R> LinkMLServiceImpl<T, E, C, O, R>
+impl<T, E, C, O, R, P> LinkMLServiceImpl<T, E, C, O, R, P>
 where
     T: TaskManagementService,
     E: ObjectSafeErrorHandler + 'static,
     C: ConfigurationService + Send + Sync + 'static,
     O: TimeoutService,
     R: RandomService,
+    P: ParseService,
 {
     /// Create a new `LinkML` service instance
     ///
     /// # Errors
     ///
     /// Returns an error if service creation fails
-    pub fn new(deps: LinkMLServiceDependencies<T, E, C, O, R>) -> Result<Self> {
+    pub fn new(deps: LinkMLServiceDependencies<T, E, C, O, R, P>) -> Result<Self> {
         let default_config = LinkMLConfig::default();
-        let mut import_resolver = ImportResolver::new();
-        import_resolver.set_parse_service(deps.parse_service.clone());
+        let import_resolver = ImportResolver::new();
         let config = Arc::new(RwLock::new(default_config));
 
         // Create validator cache with RootReal cache service integration
@@ -114,9 +215,15 @@ where
         let validator_cache =
             Arc::new(CompiledValidatorCache::new().with_cache_service(cache_adapter));
 
+        // Create V2 parsers
+        let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+        let yaml_parser = YamlParserV2::new(fs_adapter.clone());
+        let json_parser = JsonParserV2::new(deps.parse_service.clone(), fs_adapter);
+
         Ok(Self {
             config,
-            parser: Parser::new(deps.parse_service.clone()),
+            yaml_parser,
+            json_parser,
             import_resolver,
             schema_cache: Arc::new(RwLock::new(HashMap::new())),
             validator_cache,
@@ -135,7 +242,6 @@ where
             cache: deps.cache,
             monitor: deps.monitor,
             random_service: deps.random_service,
-            parse_service: deps.parse_service,
         })
     }
 
@@ -146,7 +252,7 @@ where
     /// Returns an error if service creation fails
     pub fn with_config(
         config: LinkMLConfig,
-        deps: LinkMLServiceDependencies<T, E, C, O, R>,
+        deps: LinkMLServiceDependencies<T, E, C, O, R, P>,
     ) -> Result<Self> {
         let import_resolver = ImportResolver::new();
         let config = Arc::new(RwLock::new(config));
@@ -156,9 +262,15 @@ where
         let validator_cache =
             Arc::new(CompiledValidatorCache::new().with_cache_service(cache_adapter));
 
+        // Create V2 parsers
+        let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+        let yaml_parser = YamlParserV2::new(fs_adapter.clone());
+        let json_parser = JsonParserV2::new(deps.parse_service.clone(), fs_adapter);
+
         Ok(Self {
             config,
-            parser: Parser::new(deps.parse_service.clone()),
+            yaml_parser,
+            json_parser,
             import_resolver,
             schema_cache: Arc::new(RwLock::new(HashMap::new())),
             validator_cache,
@@ -177,7 +289,6 @@ where
             cache: deps.cache,
             monitor: deps.monitor,
             random_service: deps.random_service,
-            parse_service: deps.parse_service,
         })
     }
 
@@ -291,7 +402,7 @@ where
         ];
 
         for (name, content) in builtin_schemas {
-            match self.parser.parse_str(content, "yaml").await {
+            match AsyncSchemaParser::parse_str(&self.yaml_parser, content).await {
                 Ok(schema) => {
                     let mut cache = self.schema_cache.write();
                     cache.insert(name.to_string(), schema);
@@ -750,13 +861,14 @@ where
 }
 
 #[async_trait]
-impl<T, E, C, O, R> LinkMLService for LinkMLServiceImpl<T, E, C, O, R>
+impl<T, E, C, O, R, P> LinkMLService for LinkMLServiceImpl<T, E, C, O, R, P>
 where
     T: TaskManagementService + Send + Sync,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync,
     O: TimeoutService + Send + Sync,
     R: RandomService + Send + Sync,
+    P: ParseService,
 {
     async fn load_schema(&self, path: &Path) -> Result<SchemaDefinition> {
         // Track operation with error handler
@@ -795,39 +907,82 @@ where
         }
 
         // Record cache miss
-        // Parse the schema with error handling
-        let schema = match self.parser.parse_file(path).await {
-            Ok(s) => s,
-            Err(e) => {
-                // Record error with error handler
-                let error_context = std::collections::HashMap::from([
-                    ("operation".to_string(), operation_id.clone()),
-                    ("error_type".to_string(), "schema_parse_error".to_string()),
-                    ("path".to_string(), path.to_string_lossy().to_string()),
-                    ("severity".to_string(), "high".to_string()),
-                ]);
+        // Determine format from file extension
+        let extension = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("yaml");
+        
+        // Parse the schema with error handling using format-specific parser
+        let schema = match extension {
+            "json" => match AsyncSchemaParser::parse_file(&self.json_parser, path).await {
+                Ok(s) => s,
+                Err(e) => {
+                    // Record error with error handler
+                    let error_context = std::collections::HashMap::from([
+                        ("operation".to_string(), operation_id.clone()),
+                        ("error_type".to_string(), "schema_parse_error".to_string()),
+                        ("path".to_string(), path.to_string_lossy().to_string()),
+                        ("format".to_string(), "json".to_string()),
+                        ("severity".to_string(), "high".to_string()),
+                    ]);
 
-                // Track error with error handler service
-                let _ = self
-                    .error_handler
-                    .categorize_error_by_string(
-                        &e.to_string(),
-                        "LinkMLError",
-                        Some(ErrorContext::new(
-                            "linkml-service".to_string(),
-                            "load_schema".to_string(),
-                        )),
-                    )
-                    .await;
-                self.logger
-                    .error(&format!(
-                        "Failed to parse schema: {e} - Context: {error_context:?}"
-                    ))
-                    .await
-                    .map_err(|log_err| LinkMLError::service(format!("Logger error: {log_err}")))?;
+                    // Track error with error handler service
+                    let _ = self
+                        .error_handler
+                        .categorize_error_by_string(
+                            &e.to_string(),
+                            "LinkMLError",
+                            Some(ErrorContext::new(
+                                "linkml-service".to_string(),
+                                "load_schema".to_string(),
+                            )),
+                        )
+                        .await;
+                    self.logger
+                        .error(&format!(
+                            "Failed to parse JSON schema: {e} - Context: {error_context:?}"
+                        ))
+                        .await
+                        .map_err(|log_err| LinkMLError::service(format!("Logger error: {log_err}")))?;
 
-                return Err(e);
-            }
+                    return Err(e);
+                }
+            },
+            _ => match AsyncSchemaParser::parse_file(&self.yaml_parser, path).await {
+                Ok(s) => s,
+                Err(e) => {
+                    // Record error with error handler
+                    let error_context = std::collections::HashMap::from([
+                        ("operation".to_string(), operation_id.clone()),
+                        ("error_type".to_string(), "schema_parse_error".to_string()),
+                        ("path".to_string(), path.to_string_lossy().to_string()),
+                        ("format".to_string(), "yaml".to_string()),
+                        ("severity".to_string(), "high".to_string()),
+                    ]);
+
+                    // Track error with error handler service
+                    let _ = self
+                        .error_handler
+                        .categorize_error_by_string(
+                            &e.to_string(),
+                            "LinkMLError",
+                            Some(ErrorContext::new(
+                                "linkml-service".to_string(),
+                                "load_schema".to_string(),
+                            )),
+                        )
+                        .await;
+                    self.logger
+                        .error(&format!(
+                            "Failed to parse YAML schema: {e} - Context: {error_context:?}"
+                        ))
+                        .await
+                        .map_err(|log_err| LinkMLError::service(format!("Logger error: {log_err}")))?;
+
+                    return Err(e);
+                }
+            },
         };
 
         // Resolve imports
@@ -895,30 +1050,46 @@ where
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 
-        let format_str = match format {
-            SchemaFormat::Yaml => "yaml",
-            SchemaFormat::Json => "json",
-        };
+        // Parse the schema using format-specific V2 parser
+        let schema = match format {
+            SchemaFormat::Yaml => match AsyncSchemaParser::parse_str(&self.yaml_parser, content).await {
+                Ok(s) => s,
+                Err(e) => {
+                    // Track parse error
+                    let _ = self
+                        .error_handler
+                        .categorize_error_by_string(
+                            &e.to_string(),
+                            "LinkMLError",
+                            Some(ErrorContext::new(
+                                "linkml-service".to_string(),
+                                "load_schema_str".to_string(),
+                            )),
+                        )
+                        .await;
 
-        // Parse the schema
-        let schema = match self.parser.parse_str(content, format_str).await {
-            Ok(s) => s,
-            Err(e) => {
-                // Track parse error
-                let _ = self
-                    .error_handler
-                    .categorize_error_by_string(
-                        &e.to_string(),
-                        "LinkMLError",
-                        Some(ErrorContext::new(
-                            "linkml-service".to_string(),
-                            "load_schema_str".to_string(),
-                        )),
-                    )
-                    .await;
+                    return Err(e);
+                }
+            },
+            SchemaFormat::Json => match AsyncSchemaParser::parse_str(&self.json_parser, content).await {
+                Ok(s) => s,
+                Err(e) => {
+                    // Track parse error
+                    let _ = self
+                        .error_handler
+                        .categorize_error_by_string(
+                            &e.to_string(),
+                            "LinkMLError",
+                            Some(ErrorContext::new(
+                                "linkml-service".to_string(),
+                                "load_schema_str".to_string(),
+                            )),
+                        )
+                        .await;
 
-                return Err(e);
-            }
+                    return Err(e);
+                }
+            },
         };
 
         // Resolve imports
@@ -983,13 +1154,14 @@ where
 }
 
 // Helper methods for LinkMLServiceImpl
-impl<T, E, C, O, R> LinkMLServiceImpl<T, E, C, O, R>
+impl<T, E, C, O, R, P> LinkMLServiceImpl<T, E, C, O, R, P>
 where
     T: TaskManagementService + Send + Sync,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync,
     O: TimeoutService + Send + Sync,
     R: RandomService + Send + Sync,
+    P: ParseService,
 {
     async fn get_timestamp_nanos(&self) -> Result<i64> {
         self.timestamp
@@ -1174,13 +1346,14 @@ impl ConfigurationChangeHandler for LinkMLConfigWatcherHandler {
 }
 
 #[async_trait]
-impl<T, E, C, O, R> LinkMLServiceExt for LinkMLServiceImpl<T, E, C, O, R>
+impl<T, E, C, O, R, P> LinkMLServiceExt for LinkMLServiceImpl<T, E, C, O, R, P>
 where
     T: TaskManagementService + Send + Sync,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync,
     O: TimeoutService + Send + Sync,
     R: RandomService + Send + Sync,
+    P: ParseService,
 {
     async fn validate_typed<Ty>(
         &self,
@@ -1210,8 +1383,8 @@ where
 /// without requiring all the heavy service dependencies.
 #[derive(Clone)]
 pub struct MinimalLinkMLServiceImpl {
-    parser: Parser,
-    parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
+    yaml_parser: YamlParserV2<TokioFileSystemAdapter>,
+    json_parser: JsonParserV2<NoParseService, TokioFileSystemAdapter>,
 }
 
 impl MinimalLinkMLServiceImpl {
@@ -1220,12 +1393,12 @@ impl MinimalLinkMLServiceImpl {
     /// # Errors
     ///
     /// Currently this function never fails, but returns a Result for future compatibility
-    pub fn new(
-        parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
-    ) -> Result<Self> {
+    pub fn new() -> Result<Self> {
+        let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+        let parse_service = Arc::new(NoParseService);
         Ok(Self {
-            parser: Parser::new(parse_service.clone()),
-            parse_service,
+            yaml_parser: YamlParserV2::new(fs_adapter.clone()),
+            json_parser: JsonParserV2::new(parse_service, fs_adapter),
         })
     }
 }
@@ -1233,7 +1406,16 @@ impl MinimalLinkMLServiceImpl {
 #[async_trait]
 impl LinkMLService for MinimalLinkMLServiceImpl {
     async fn load_schema(&self, path: &Path) -> Result<SchemaDefinition> {
-        self.parser.parse_file(path).await
+        // Determine format from file extension
+        let extension = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("yaml");
+        
+        match extension {
+            "json" => AsyncSchemaParser::parse_file(&self.json_parser, path).await,
+            _ => AsyncSchemaParser::parse_file(&self.yaml_parser, path).await,
+        }
     }
 
     async fn load_schema_str(
@@ -1241,11 +1423,10 @@ impl LinkMLService for MinimalLinkMLServiceImpl {
         content: &str,
         format: linkml_core::traits::SchemaFormat,
     ) -> Result<SchemaDefinition> {
-        let format_str = match format {
-            linkml_core::traits::SchemaFormat::Yaml => "yaml",
-            linkml_core::traits::SchemaFormat::Json => "json",
-        };
-        self.parser.parse_str(content, format_str).await
+        match format {
+            linkml_core::traits::SchemaFormat::Yaml => AsyncSchemaParser::parse_str(&self.yaml_parser, content).await,
+            linkml_core::traits::SchemaFormat::Json => AsyncSchemaParser::parse_str(&self.json_parser, content).await,
+        }
     }
 
     async fn validate(

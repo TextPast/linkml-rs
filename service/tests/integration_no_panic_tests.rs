@@ -170,7 +170,7 @@ slots:
     fs::write(&schema_path, schema_yaml).expect("write schema");
 
     // Step 1: Parse the schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = match parser.parse_file(&schema_path, "yaml") {
         Ok(s) => s,
         Err(e) => {
@@ -301,7 +301,7 @@ slots:
     fs::write(&data_path, data_yaml).expect("write data");
 
     // Load schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse_file(&schema_path, "yaml").expect("parse schema");
 
     // Load data
@@ -418,7 +418,7 @@ types:
 "#,
     ];
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
 
     for (i, schema_str) in test_schemas.iter().enumerate() {
         match parser.parse_str(schema_str, "yaml") {
@@ -459,7 +459,7 @@ slots:
     range: integer
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse_str(schema_yaml, "yaml").expect("parse schema");
 
     let mut tasks = JoinSet::new();

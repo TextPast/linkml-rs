@@ -13,7 +13,7 @@ id: https://example.org/empty
 name: EmptySchema
 ";
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(empty_schema, "yaml")?;
 
     assert_eq!(schema.name, "EmptySchema");
@@ -48,7 +48,7 @@ slots:
     pattern: '^[^@]+@[^@]+\.[^@]+$'
 ";
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
@@ -116,7 +116,7 @@ slots:
     required: true
 ";
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
@@ -180,7 +180,7 @@ slots:
     pattern: '^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$'
 ";
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
@@ -237,7 +237,7 @@ slots:
     range: string
 ";
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
@@ -282,7 +282,7 @@ slots:
     range: integer
 ";
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = std::sync::Arc::new(ValidationEngine::new(&schema)?);
@@ -335,7 +335,7 @@ slots:
     range: string
 ";
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;

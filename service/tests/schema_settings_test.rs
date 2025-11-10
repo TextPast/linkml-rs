@@ -168,9 +168,13 @@ slots:
 
     use linkml_core::types::SchemaDefinition;
     use linkml_core::types::{ClassDefinition, SlotDefinition};
-    use linkml_service::parser::{YamlParserSimple, SchemaParser};
-    let parser = YamlParserSimple::new();
-    let schema = parser.parse_str(yaml_content, "yaml").expect("Test operation failed");
+    use linkml_service::parser::SchemaParser;
+    
+    mod helpers;
+    use helpers::parser_v2_helpers::create_test_yaml_parser;
+    
+    let parser = create_test_yaml_parser();
+    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
 
     assert!(schema.settings.is_some());
     let settings = schema.settings.as_ref().expect("Test operation failed");

@@ -1,5 +1,7 @@
 //! Tests for validation functionality
 
+mod helpers;
+use helpers::parser_v2_helpers::create_test_yaml_parser;
 use linkml_service::validator::validate_as_class;
 use serde_json::json;
 
@@ -41,9 +43,9 @@ slots:
 "#;
 
     // Parse schema
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Valid data
@@ -117,9 +119,9 @@ slots:
     range: date
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Test wrong types
@@ -163,9 +165,9 @@ slots:
     pattern: "^\\+?[0-9]{10,15}$"
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Valid patterns
@@ -219,9 +221,9 @@ slots:
     maximum_value: "100"
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Out of range values
@@ -274,9 +276,9 @@ slots:
     range: StatusEnum
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Valid enum value
@@ -336,7 +338,7 @@ slots:
     unique: true
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser.parse(schema_yaml, "yaml").expect("Test operation failed");
 
     // Test cardinality
@@ -397,9 +399,9 @@ slots:
     range: integer
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Person should inherit id and name slots

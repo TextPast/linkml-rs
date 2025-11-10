@@ -1,0 +1,69 @@
+# Example schema defining Person and Organization classes
+id: https://example.org/person
+name: person_schema
+title: Person Schema
+description: A schema for representing people and organizations
+version: 1.0.0
+license: CC-BY-4.0
+
+prefixes:
+  schema: http://schema.org/
+  foaf: http://xmlns.com/foaf/0.1/
+default_prefix: schema
+
+classes:
+  NamedEntity:
+    description: An entity with a name
+    abstract: true
+    slots:
+      - id
+      - name
+  
+  Person:
+    is_a: NamedEntity
+    description: A person (alive, dead, undead, or fictional)
+    slots:
+      - email
+      - age
+      - birth_date
+    slot_usage:
+      name:
+        required: true
+      email:
+        pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  
+  Organization:
+    is_a: NamedEntity
+    description: An organization such as a company or institution
+    slots:
+      - founded_year
+
+slots:
+  id:
+    identifier: true
+    range: string
+    required: true
+  
+  name:
+    range: string
+    description: The name of an entity
+  
+  email:
+    range: string
+    description: An email address
+  
+  age:
+    range: integer
+    description: Age in years
+    minimum_value: 0
+    maximum_value: 200
+  
+  birth_date:
+    range: date
+    description: Date of birth
+  
+  founded_year:
+    range: integer
+    description: Year the organization was founded
+    minimum_value: 1000
+    maximum_value: 2100

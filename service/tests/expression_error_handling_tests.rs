@@ -24,7 +24,7 @@ fn test_evaluator_error_handling() {
 /// Test parser error handling
 #[test]
 fn test_parser_error_handling() {
-    let _parser = YamlParserSimple::new();
+    let _parser = Parser::new();
     // Test passes if parser creation doesn't panic
 }
 

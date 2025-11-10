@@ -8,14 +8,13 @@
 
 use clap::Parser as ClapParser;
 use linkml_core::types::SchemaDefinition;
-use linkml_service::parser::{Parser as LinkmlParser, SchemaParser};
+use linkml_service::parser::{YamlParserV2, SchemaParser};
+use linkml_service::file_system_adapter::TokioFileSystemAdapter;
 use linkml_service::loader::{
     DataDumper, DataLoader, DumpOptions, LoadOptions,
     RdfDumper, RdfOptions, RdfSerializationFormat,
     TypeDBIntegrationLoader, TypeDBIntegrationOptions,
 };
-use logger_service::wiring::wire_testing_logger;
-use parse_service::NoLinkML;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -351,13 +350,10 @@ async fn export_single_class(
 async fn load_schema(
     schema_path: &Path,
 ) -> std::result::Result<SchemaDefinition, Box<dyn std::error::Error>> {
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
-    let parse_service = parse_service_handle.into_arc();
-    
     let schema_content = fs::read_to_string(schema_path)?;
-    let parser = LinkmlParser::new(parse_service);
-    let schema = parser.parse_str(&schema_content, "yaml").await?;
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(&schema_content)?;
     Ok(schema)
 }
 

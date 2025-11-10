@@ -1,8 +1,10 @@
 //! Tests for enhanced pattern validation with named capture groups
 
-use linkml_service::parser::YamlParserSimple;
 use linkml_service::validator::{ValidationEngine, validate_as_class};
 use serde_json::json;
+
+mod helpers;
+use helpers::parser_v2_helpers::create_test_yaml_parser;
 
 #[tokio::test]
 async fn test_pattern_with_named_capture_groups() {
@@ -41,9 +43,9 @@ slots:
 "#;
 
     // Parse schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Debug: Check patterns in parsed schema
@@ -116,9 +118,9 @@ slots:
     pattern: "^v(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?:-(?P<prerelease>[\\w\\.]+))?(?:\\+(?P<build>[\\w\\.]+))?$"
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Valid semantic version strings
@@ -164,9 +166,9 @@ slots:
     pattern: "^(?P<country>\\+\\d{1,3})?[\\s-]?(?P<area>\\d{3})[\\s-]?(?P<exchange>\\d{3})[\\s-]?(?P<number>\\d{4})$"
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Valid phone numbers in different formats
@@ -226,9 +228,9 @@ slots:
     pattern: "^[A-Z]{2,4}-\\d{4,8}-[A-Z0-9]{6}$"
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_yaml_parser();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse_str(schema_yaml)
         .expect("Test operation failed");
 
     // Generate large array of items to test caching

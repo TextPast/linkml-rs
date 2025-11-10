@@ -6,12 +6,14 @@
 //! 3. Use plugin-based generators
 //! 4. Manage plugin lifecycle
 
-use linkml_service::parser::SchemaParser;
-use linkml_service::plugin::{PluginContext, PluginManager, PluginType};
-use logger_service::wiring::wire_development_logger;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
+
+use file_system_adapter::TokioFileSystemAdapter;
+use linkml_service::parser::YamlParserV2;
+use linkml_service::plugin::{PluginContext, PluginManager, PluginType};
+use logger_service::wiring::wire_development_logger;
 use timestamp_service::wiring::wire_timestamp;
 
 #[tokio::main]
@@ -63,6 +65,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         config: HashMap::new(),
         working_dir: std::env::current_dir()?,
         temp_dir: std::env::temp_dir(),
+        logger: logger.clone(),
     };
 
     plugin_manager
@@ -113,9 +116,9 @@ classes:
         multivalued: true
 "#;
 
-    // Parse the schema
-    let mut parser = SchemaParser::new();
-    let schema = parser.parse(schema_yaml)?;
+    // Parse the schema using V2 API
+    let parser = YamlParserV2::new(Arc::new(TokioFileSystemAdapter::new()));
+    let schema = parser.parse_str(schema_yaml)?;
 
     // Use each generator plugin
     for plugin in generator_plugins {

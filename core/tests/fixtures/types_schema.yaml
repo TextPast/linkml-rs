@@ -1,0 +1,54 @@
+# Schema demonstrating custom type definitions
+id: https://example.org/types
+name: types_schema
+title: Types Schema
+description: A schema with custom type definitions
+
+imports:
+  - linkml:types
+
+types:
+  EmailAddress:
+    typeof: string
+    description: An email address
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  
+  PhoneNumber:
+    typeof: string
+    description: A phone number in E.164 format
+    pattern: "^\\+[1-9]\\d{1,14}$"
+  
+  Percentage:
+    typeof: float
+    description: A percentage value
+    minimum_value: 0.0
+    maximum_value: 100.0
+  
+  PositiveInteger:
+    typeof: integer
+    description: A positive integer
+    minimum_value: 1
+
+classes:
+  Contact:
+    description: Contact information
+    slots:
+      - name
+      - email
+      - phone
+      - response_rate
+
+slots:
+  name:
+    range: string
+    required: true
+  
+  email:
+    range: EmailAddress
+  
+  phone:
+    range: PhoneNumber
+  
+  response_rate:
+    range: Percentage
+    description: Response rate as a percentage

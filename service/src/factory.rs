@@ -13,6 +13,7 @@ use dbms_core::DBMSService;
 use error_handling_core::ObjectSafeErrorHandler;
 use logger_core::LoggerService;
 use monitoring_core::MonitoringService;
+use parse_core::ParseService;
 use random_core::RandomService;
 use task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
@@ -27,12 +28,13 @@ use timestamp_core::{TimestampError, TimestampService};
 /// - `D`: `DBMSService` implementation
 /// - `O`: `TimeoutService` implementation
 /// - `R`: `RandomService` implementation
+/// - `P`: `ParseService` implementation
 ///
 /// # Errors
 ///
 /// Returns an error if service initialization fails
 #[allow(clippy::too_many_arguments)]
-pub async fn create_linkml_service<T, E, C, O, R>(
+pub async fn create_linkml_service<T, E, C, O, R, P>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     task_manager: Arc<T>,
@@ -43,14 +45,15 @@ pub async fn create_linkml_service<T, E, C, O, R>(
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
     random_service: Arc<R>,
-    parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
-) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: ParseService + Send + Sync + 'static,
 {
     // Load configuration from configuration service and convert to core config
     let service_config = load_and_validate_configuration(&config_service).await?;
@@ -136,9 +139,13 @@ where
 /// - `C`: `ConfigurationService` implementation
 /// - `O`: `TimeoutService` implementation
 /// - `R`: `RandomService` implementation
+/// - `P`: `ParseService` implementation
 ///
 /// `DBMSService` is dyn-compatible and uses `Arc<dyn DBMSService>` pattern
-pub struct LinkMLServiceDependencies<T, E, C, O, R> {
+pub struct LinkMLServiceDependencies<T, E, C, O, R, P>
+where
+    P: parse_core::ParseService,
+{
     /// Logger service
     pub logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     /// Timestamp service
@@ -160,7 +167,7 @@ pub struct LinkMLServiceDependencies<T, E, C, O, R> {
     /// Random service
     pub random_service: Arc<R>,
     /// Parse service for async YAML/JSON parsing
-    pub parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
+    pub parse_service: Arc<P>,
 }
 
 /// Create a `LinkML` service with custom configuration
@@ -181,16 +188,17 @@ pub struct LinkMLServiceDependencies<T, E, C, O, R> {
 /// # Errors
 ///
 /// Returns an error if service initialization fails
-pub async fn create_linkml_service_with_config<T, E, C, O, R>(
+pub async fn create_linkml_service_with_config<T, E, C, O, R, P>(
     config: LinkMLConfig,
-    deps: LinkMLServiceDependencies<T, E, C, O, R>,
-) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
+    deps: LinkMLServiceDependencies<T, E, C, O, R, P>,
+) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: ParseService + Send + Sync + 'static,
 {
     // Create service with custom config
     let service = LinkMLServiceImpl::with_config(config, deps)?;

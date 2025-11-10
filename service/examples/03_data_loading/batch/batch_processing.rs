@@ -13,9 +13,8 @@
 use futures::stream::{self, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use linkml_core::prelude::*;
-use linkml_service::prelude::*;
-use logger_service::wiring::wire_testing_logger;
-use parse_service::NoLinkML;
+use linkml_service::{prelude::*, parser::YamlParserV2};
+use parse_service::filesystem::TokioFileSystemAdapter;
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
@@ -108,13 +107,10 @@ enums:
       vip:
 "#;
     
-    // Wire ParseService
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
-    let parse_service = parse_service_handle.into_arc();
-    
-    let parser = Parser::new(parse_service);
-    let schema = parser.parse_str(schema_yaml, "yaml").await?;
+    // Use V2 parser (synchronous, no wiring needed)
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(schema_yaml)?;
     let service = create_example_service().await?;
     println!("Example 1: Simple Batch Validation");
     println!("---------------------------------");

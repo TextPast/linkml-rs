@@ -38,7 +38,7 @@ use timestamp_core::{TimestampError, TimestampService};
 /// Returns an error if the operation fails
 ///
 /// # Errors
-pub async fn create_linkml_service_with_configuration<C, T, E, O, R>(
+pub async fn create_linkml_service_with_configuration<C, T, E, O, R, P>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
@@ -49,13 +49,15 @@ pub async fn create_linkml_service_with_configuration<C, T, E, O, R>(
     dbms_service: Arc<dyn DBMSService<Error = dbms_core::DBMSError>>,
     timeout_service: Arc<O>,
     random_service: Arc<R>,
-) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: parse_core::ParseService + Send + Sync + 'static,
 {
     // Load configuration from Configuration Service
     let config: LinkMLServiceConfig = configuration_service
@@ -86,6 +88,7 @@ where
         dbms_service,
         timeout_service,
         random_service,
+        parse_service,
     )
     .await
 }
@@ -102,7 +105,7 @@ where
 /// Returns an error if the operation fails
 ///
 /// # Errors
-pub async fn create_linkml_service_with_custom_config<C, T, E, O, R>(
+pub async fn create_linkml_service_with_custom_config<C, T, E, O, R, P>(
     config: LinkMLServiceConfig,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
@@ -114,13 +117,15 @@ pub async fn create_linkml_service_with_custom_config<C, T, E, O, R>(
     dbms_service: Arc<dyn DBMSService<Error = dbms_core::DBMSError>>,
     timeout_service: Arc<O>,
     random_service: Arc<R>,
-) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: parse_core::ParseService + Send + Sync + 'static,
 {
     // Validate custom configuration
     use crate::factory::LinkMLServiceDependencies as FactoryDeps;
@@ -141,6 +146,7 @@ where
         cache,
         monitor: monitoring,
         random_service,
+        parse_service,
     };
 
     // Create and initialize the service with default LinkMLConfig
@@ -164,7 +170,7 @@ where
 /// Returns an error if the operation fails
 ///
 /// # Errors
-pub async fn create_linkml_service_from_source<C, T, E, O, R>(
+pub async fn create_linkml_service_from_source<C, T, E, O, R, P>(
     config_source: &str,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
@@ -176,13 +182,15 @@ pub async fn create_linkml_service_from_source<C, T, E, O, R>(
     dbms_service: Arc<dyn DBMSService<Error = dbms_core::DBMSError>>,
     timeout_service: Arc<O>,
     random_service: Arc<R>,
-) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: parse_core::ParseService + Send + Sync + 'static,
 {
     // Load configuration from specific source
     let config: LinkMLServiceConfig = configuration_service
@@ -214,6 +222,7 @@ where
         dbms_service,
         timeout_service,
         random_service,
+        parse_service,
     )
     .await
 }
@@ -227,7 +236,7 @@ where
 ///
 /// Returns an error if the operation fails
 #[allow(clippy::too_many_arguments)]
-pub async fn create_linkml_service_for_environment<C, T, E, O, R>(
+pub async fn create_linkml_service_for_environment<C, T, E, O, R, P>(
     environment: Environment,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
@@ -239,13 +248,15 @@ pub async fn create_linkml_service_for_environment<C, T, E, O, R>(
     dbms_service: Arc<dyn DBMSService<Error = dbms_core::DBMSError>>,
     timeout_service: Arc<O>,
     random_service: Arc<R>,
-) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: parse_core::ParseService + Send + Sync + 'static,
 {
     // Load environment-specific configuration
     let config = match environment {
@@ -264,6 +275,7 @@ where
                 dbms_service,
                 timeout_service,
                 random_service,
+                parse_service,
             )
             .await;
         }
@@ -289,6 +301,7 @@ where
         dbms_service,
         timeout_service,
         random_service,
+        parse_service,
     )
     .await
 }
@@ -315,13 +328,14 @@ impl std::fmt::Display for Environment {
 }
 
 /// Service dependencies structure
-pub struct LinkMLServiceDependencies<T, E, C, O, R>
+pub struct LinkMLServiceDependencies<T, E, C, O, R, P>
 where
     T: TaskManagementService,
     E: ObjectSafeErrorHandler,
     C: ConfigurationService,
     O: TimeoutService,
     R: RandomService,
+    P: parse_core::ParseService,
 {
     /// `LinkML` service configuration
     pub config: LinkMLServiceConfig,
@@ -345,6 +359,8 @@ where
     pub timeout_service: Arc<O>,
     /// Random service instance
     pub random_service: Arc<R>,
+    /// Parse service instance
+    pub parse_service: Arc<P>,
 }
 
 #[cfg(test)]

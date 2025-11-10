@@ -46,7 +46,7 @@ use timestamp_core::{TimestampError, TimestampService};
 ///
 /// Returns an error if service creation or initialization fails
 #[allow(clippy::too_many_arguments)]
-pub async fn create_linkml_service_with_dbms<C, T, E, O, R>(
+pub async fn create_linkml_service_with_dbms<C, T, E, O, R, P>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
@@ -57,13 +57,15 @@ pub async fn create_linkml_service_with_dbms<C, T, E, O, R>(
     dbms_service: Arc<dyn DBMSService<Error = dbms_core::DBMSError>>,
     timeout_service: Arc<O>,
     random_service: Arc<R>,
-) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: parse_core::ParseService + Send + Sync + 'static,
 {
     // Create service dependencies
     let deps = LinkMLServiceDependencies {
@@ -77,6 +79,7 @@ where
         dbms_service: dbms_service.clone(),
         timeout_service: timeout_service.clone(),
         random_service: random_service.clone(),
+        parse_service: parse_service.clone(),
     };
 
     // Load configuration from configuration service
@@ -138,7 +141,7 @@ where
 ///
 /// Returns an error if service creation or initialization fails
 #[allow(clippy::too_many_arguments)]
-pub async fn create_linkml_service_with_dbms_and_config<C, T, E, O, R>(
+pub async fn create_linkml_service_with_dbms_and_config<C, T, E, O, R, P>(
     config: LinkMLConfig,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
@@ -150,13 +153,15 @@ pub async fn create_linkml_service_with_dbms_and_config<C, T, E, O, R>(
     dbms_service: Arc<dyn DBMSService<Error = dbms_core::DBMSError>>,
     timeout_service: Arc<O>,
     random_service: Arc<R>,
-) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
+    parse_service: Arc<P>,
+) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R, P>>>
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
     E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
+    P: parse_core::ParseService + Send + Sync + 'static,
 {
     // Create service dependencies
     let deps = LinkMLServiceDependencies {
@@ -170,6 +175,7 @@ where
         dbms_service: dbms_service.clone(),
         timeout_service: timeout_service.clone(),
         random_service: random_service.clone(),
+        parse_service: parse_service.clone(),
     };
 
     // Create service with provided configuration

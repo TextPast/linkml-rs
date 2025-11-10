@@ -57,6 +57,7 @@ pub struct FileMetadata {
 }
 
 /// Default file system adapter using `tokio::fs`
+#[derive(Clone)]
 pub struct TokioFileSystemAdapter {
     /// Optional root directory for sandboxing
     root: Option<PathBuf>,

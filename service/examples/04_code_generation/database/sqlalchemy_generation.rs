@@ -1,7 +1,10 @@
 //! Example of generating SQLAlchemy ORM models from LinkML schemas
 
+use std::sync::Arc;
+
+use file_system_adapter::TokioFileSystemAdapter;
 use linkml_service::generator::{Generator, SQLAlchemyGenerator, SQLAlchemyGeneratorConfig};
-use linkml_service::parser::SchemaParser;
+use linkml_service::parser::YamlParserV2;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -151,9 +154,9 @@ enums:
         description: Post is no longer active
 "#;
 
-    // Parse the schema
-    let mut parser = SchemaParser::new();
-    let schema = parser.parse(schema_yaml)?;
+    // Parse the schema using V2 API
+    let parser = YamlParserV2::new(Arc::new(TokioFileSystemAdapter::new()));
+    let schema = parser.parse_str(schema_yaml)?;
 
     println!(
         "Generating SQLAlchemy ORM models for blog schema...

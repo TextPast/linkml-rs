@@ -72,7 +72,7 @@ slots:
     .expect("Test operation failed");
 
     // Parse schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -169,7 +169,7 @@ WOMN,Womens,CLOT
         .await
         .expect("Test operation failed");
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let _schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -241,7 +241,7 @@ slots:
     .await
     .expect("Test operation failed");
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");

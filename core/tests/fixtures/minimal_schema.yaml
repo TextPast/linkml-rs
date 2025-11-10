@@ -1,0 +1,3 @@
+# Minimal LinkML schema with only required fields
+id: https://example.org/minimal
+name: minimal_schema

@@ -82,7 +82,7 @@ slots:
 "#;
 
     // Parse schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -202,7 +202,7 @@ slots:
     range: string
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -273,7 +273,7 @@ slots:
     range: string
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
@@ -346,7 +346,7 @@ slots:
     range: string
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse(schema_yaml, "yaml")
         .expect("Test operation failed");

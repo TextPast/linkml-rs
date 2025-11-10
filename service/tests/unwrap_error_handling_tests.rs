@@ -3,6 +3,9 @@
 //! This test file verifies that the removal of unwrap() calls in Phase 1
 //! results in proper error handling instead of panics.
 
+mod helpers;
+use helpers::parser_v2_helpers::create_test_yaml_parser;
+
 use linkml_service::{
     parser::{
         Parser,
@@ -49,8 +52,8 @@ classes:
       - age  # Missing closing bracket above
 ";
 
-    let parser = YamlParserSimple::new();
-    let result = parser.parse_str(invalid_yaml, "yaml");
+    let parser = create_test_yaml_parser();
+    let result = parser.parse_str(invalid_yaml);
 
     // Should return error, not panic
     assert!(result.is_err());
@@ -72,8 +75,8 @@ fn test_parser_handles_invalid_json() {
     }
 }"#;
 
-    let parser = YamlParserSimple::new();
-    let result = parser.parse_str(invalid_json, "json");
+    let parser = create_test_yaml_parser();
+    let result = parser.parse_str(invalid_json);
 
     // Should return error, not panic
     assert!(result.is_err());
@@ -270,8 +273,8 @@ slots:
     fs::write(&schema_path, schema_yaml).expect("write schema");
 
     // Parse schema
-    let parser = YamlParserSimple::new();
-    let schema = match parser.parse_file(&schema_path, "yaml") {
+    let parser = create_test_yaml_parser();
+    let schema = match parser.parse_file(&schema_path) {
         Ok(s) => s,
         Err(e) => {
             // Parse error is acceptable

@@ -1,11 +1,12 @@
 //! Lightweight YAML parser without dependency injection
 //!
-//! This parser provides a real, lightweight parsing implementation designed
-//! for CLI tools, simple applications, unit tests, and documentation examples
-//! where the full ParseService infrastructure would be unnecessary overhead.
+//! **DEPRECATED**: This parser bypasses RootReal's centralized parsing architecture.
+//! Use the proper test utilities from `crates/testing/test-utils/` instead, which
+//! wrap the centralized ParseService with proper dependency injection.
 //!
-//! Unlike mock implementations in testing-mocks, this performs actual YAML
-//! parsing using serde_yaml and is suitable for production use in simple tools.
+//! This parser was designed for CLI tools and simple applications, but RootReal's
+//! architecture requires ALL parsing to go through centralized infrastructure for
+//! consistent error handling, logging, and telemetry.
 
 use linkml_core::{error::{LinkMLError, Result}, types::SchemaDefinition};
 use std::{fs, path::Path};
@@ -14,36 +15,46 @@ use super::SchemaParser;
 
 /// Lightweight YAML parser with zero service dependencies
 ///
-/// This is a real parser (not a mock) that performs actual YAML parsing.
-/// Designed for:
-/// - CLI tools and simple applications
-/// - Unit tests without complex setup
-/// - Documentation examples
-/// - Scenarios where ParseService DI infrastructure is unnecessary
+/// **DEPRECATED**: Use test utilities from `crates/testing/test-utils/` instead.
 ///
-/// For production services with full observability, use YamlParserV2 instead.
+/// This parser bypasses RootReal's centralized parsing architecture by calling
+/// serde_yaml directly. RootReal requires ALL parsing to use the centralized
+/// ParseService for consistent error handling, logging, and telemetry.
 ///
-/// # Example
+/// # Migration Path
 ///
-/// ```rust
-/// use linkml_service::parser::{YamlParserSimple, SchemaParser};
-/// use std::path::Path;
-///
+/// Instead of:
+/// ```rust,ignore
 /// let parser = YamlParserSimple::new();
-/// let yaml_content = r#"
-/// id: https://example.org/test
-/// name: test_schema
-/// "#;
-/// let schema = parser.parse_str(yaml_content).expect("Parse failed");
-/// assert_eq!(schema.name, "test_schema");
+/// let schema = parser.parse_str(content)?;
 /// ```
+///
+/// Use proper test utilities:
+/// ```rust,ignore
+/// use testing_test_utils::linkml::create_test_linkml_parser;
+///
+/// let parser = create_test_linkml_parser();
+/// let schema = parser.parse_yaml_str(content)?;
+/// ```
+///
+/// For production code, use YamlParserV2 with full dependency injection.
+#[deprecated(
+    since = "0.1.0",
+    note = "Use test utilities from testing-test-utils crate or YamlParserV2 with proper DI"
+)]
 #[derive(Default, Debug, Clone, Copy)]
 pub struct YamlParserSimple;
 
 impl YamlParserSimple {
     /// Create a new simple YAML parser
     ///
-    /// This is a zero-cost operation as the parser has no state.
+    /// **DEPRECATED**: Use `testing_test_utils::linkml::create_test_linkml_parser()` instead.
+    ///
+    /// This bypasses RootReal's centralized ParseService architecture.
+    #[deprecated(
+        since = "0.1.0",
+        note = "Use testing_test_utils::linkml::create_test_linkml_parser() for tests, or YamlParserV2 with DI for production"
+    )]
     #[must_use]
     pub const fn new() -> Self {
         Self

@@ -9,11 +9,12 @@
 
 use linkml_service::{
     expression::{Evaluator, parse_expression},
+    file_system_adapter::TokioFileSystemAdapter,
     generator::{
         JavaGenerator, ProtobufGenerator, PythonDataclassGenerator, RustGenerator, TypeQLGenerator,
         TypeScriptGenerator, typeql_generator::create_typeql_generator,
     },
-    parser::{Parser, SchemaParser},
+    parser::{YamlParserV2, SchemaParser},
     performance::{MemoryScope, global_profiler, intern},
     schema_view::SchemaView,
     security::{ResourceLimits, create_monitor, validate_string_input},
@@ -21,6 +22,7 @@ use linkml_service::{
 };
 use serde_json::json;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -304,7 +306,9 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // 2. Parse the schema
     println!("1. Parsing Schema");
     println!("-----------------");
-    let schema = profiler.time("parse_schema", || Parser::new().parse_str(schema_yaml, "yaml"))?;
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = profiler.time("parse_schema", || parser.parse_str(schema_yaml))?;
     println!("✓ Schema parsed successfully");
     println!("  Classes: {}", schema.classes.len());
     println!("  Slots: {}", schema.slots.len());

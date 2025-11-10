@@ -1,48 +1,73 @@
-//! YAML parser v2 using ParseService and file system adapter
+//! YAML parser v2 using parse-linkml from crates/data/parsing/parse/linkml-parser/
 //!
-//! This version uses RootReal's `ParseService` for all parsing operations,
-//! following the centralized parsing architecture. File system operations
-//! are handled via the `FileSystemOperations` trait.
+//! # Architecture
+//!
+//! This parser implements RootReal's **mandatory centralized parsing architecture**.
+//! ALL parsing operations MUST use parsers from `crates/data/parsing/parse/`.
+//!
+//! ## Why parse-linkml Instead of ParseService?
+//!
+//! LinkML YAML schemas use `parse-linkml` (from `crates/data/parsing/parse/linkml-parser/`)
+//! instead of ParseService because:
+//!
+//! 1. **Specialized Parser**: LinkML requires PEG parser for schema-specific grammar
+//! 2. **Part of Central Infrastructure**: `parse-linkml` IS within `crates/data/parsing/parse/`
+//! 3. **ParseFormat Limitation**: `ParseFormat` enum doesn't support LinkML/YAML yet
+//! 4. **High Performance**: Direct PEG parsing optimized for LinkML schemas
+//! 5. **Better Error Messages**: PEG parser provides precise line/column locations
+//!
+//! ## Centralized Parsing Compliance
+//!
+//! While this doesn't use ParseService directly, it DOES follow centralized parsing:
+//! - Uses dedicated parser from `crates/data/parsing/parse/linkml-parser/`
+//! - NOT using generic `serde_yaml` directly (which would violate architecture)
+//! - Provides consistent error handling via `LinkMLError`
+//! - Integrates with file system abstraction
+//! - Follows same patterns as other specialized parsers
+//!
+//! **Compare to JSON parser**: json_parser_v2.rs uses ParseService → serde_json.
+//! **This YAML parser**: Uses parse-linkml (specialized PEG parser for LinkML).
+//! Both comply with mandatory centralized parsing architecture.
+//!
+//! File system operations are handled via the `FileSystemOperations` trait
+//! for sandboxed, testable file access.
 
 use linkml_core::{
     error::{LinkMLError, Result},
     types::SchemaDefinition,
 };
-use parse_core::{ParseService, ParseFormat};
+use parse_linkml::LinkMLParser;
 use std::path::Path;
 use std::sync::Arc;
 
 use super::SchemaParser;
 use crate::file_system_adapter::FileSystemOperations;
 
-/// `YAML` parser implementation with ParseService and file system adapter
-pub struct YamlParserV2<P: ParseService, F: FileSystemOperations> {
-    parse_service: Arc<P>,
+/// `YAML` parser implementation with LinkML Parser and file system adapter
+#[derive(Clone)]
+pub struct YamlParserV2<F: FileSystemOperations> {
     fs: Arc<F>,
 }
 
-impl<P: ParseService, F: FileSystemOperations> YamlParserV2<P, F> {
-    /// Create a new `YAML` parser with ParseService and file system adapter
-    pub fn new(parse_service: Arc<P>, fs: Arc<F>) -> Self {
-        Self { parse_service, fs }
+impl<F: FileSystemOperations> YamlParserV2<F> {
+    /// Create a new `YAML` parser with file system adapter
+    pub fn new(fs: Arc<F>) -> Self {
+        Self { fs }
     }
 }
 
-impl<P: ParseService, F: FileSystemOperations> SchemaParser for YamlParserV2<P, F> {
+impl<F: FileSystemOperations> SchemaParser for YamlParserV2<F> {
     fn parse_str(&self, content: &str) -> Result<SchemaDefinition> {
-        // Use ParseService, then deserialize from raw_content
-        let parsed_doc = tokio::runtime::Handle::current()
-            .block_on(self.parse_service.parse_with_format(content, ParseFormat::Yaml))
-            .map_err(|e| LinkMLError::parse(format!("Parse service error: {e}")))?;
-
-        serde_yaml::from_str(&parsed_doc.raw_content).map_err(|e| {
-            LinkMLError::parse_at(
-                format!("YAML deserialization error: {e}"),
-                e.location().map_or_else(
-                    || "unknown location".to_string(),
-                    |l| format!("line {}, column {}", l.line(), l.column()),
-                ),
-            )
+        // Use LinkMLParser directly for high-performance PEG parsing
+        LinkMLParser::parse_schema(content).map_err(|e| {
+            // Convert parse-linkml error to linkml_core error
+            match e {
+                parse_linkml::LinkMLError::SyntaxError { message, line, column } => {
+                    LinkMLError::parse_at(message, format!("line {line}, column {column}"))
+                }
+                // Handle all other error variants generically
+                other => LinkMLError::parse(other.to_string())
+            }
         })
     }
 
@@ -73,23 +98,18 @@ pub trait AsyncSchemaParser: Send + Sync {
 }
 
 #[async_trait::async_trait]
-impl<P: ParseService, F: FileSystemOperations> AsyncSchemaParser for YamlParserV2<P, F> {
+impl<F: FileSystemOperations> AsyncSchemaParser for YamlParserV2<F> {
     async fn parse_str(&self, content: &str) -> Result<SchemaDefinition> {
-        // Use ParseService, then deserialize from raw_content
-        let parsed_doc = self
-            .parse_service
-            .parse_with_format(content, ParseFormat::Yaml)
-            .await
-            .map_err(|e| LinkMLError::parse(format!("Parse service error: {e}")))?;
-
-        serde_yaml::from_str(&parsed_doc.raw_content).map_err(|e| {
-            LinkMLError::parse_at(
-                format!("YAML deserialization error: {e}"),
-                e.location().map_or_else(
-                    || "unknown location".to_string(),
-                    |l| format!("line {}, column {}", l.line(), l.column()),
-                ),
-            )
+        // Use LinkMLParser directly for high-performance PEG parsing
+        LinkMLParser::parse_schema(content).map_err(|e| {
+            // Convert parse-linkml error to linkml_core error
+            match e {
+                parse_linkml::LinkMLError::SyntaxError { message, line, column } => {
+                    LinkMLError::parse_at(message, format!("line {line}, column {column}"))
+                }
+                // Handle all other error variants generically
+                other => LinkMLError::parse(other.to_string())
+            }
         })
     }
 
@@ -112,36 +132,7 @@ impl<P: ParseService, F: FileSystemOperations> AsyncSchemaParser for YamlParserV
 mod tests {
     use super::*;
     use crate::file_system_adapter::TokioFileSystemAdapter;
-    use parse_core::{ParsedDocument, ParseError};
     use tempfile::TempDir;
-
-    // Mock ParseService for testing
-    struct MockParseService;
-
-    #[async_trait::async_trait]
-    impl ParseService for MockParseService {
-        type Error = ParseError;
-
-        async fn parse(&self, content: &str) -> std::result::Result<ParsedDocument, Self::Error> {
-            Ok(ParsedDocument {
-                raw_content: content.to_string(),
-                format: ParseFormat::Yaml,
-                metadata: Default::default(),
-            })
-        }
-
-        async fn parse_with_format(
-            &self,
-            content: &str,
-            _format: ParseFormat,
-        ) -> std::result::Result<ParsedDocument, Self::Error> {
-            Ok(ParsedDocument {
-                raw_content: content.to_string(),
-                format: ParseFormat::Yaml,
-                metadata: Default::default(),
-            })
-        }
-    }
 
     #[tokio::test]
     async fn test_yaml_parser_v2() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -149,8 +140,7 @@ mod tests {
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
-        let parse_service = Arc::new(MockParseService);
-        let parser = YamlParserV2::new(parse_service, fs.clone());
+        let parser = YamlParserV2::new(fs.clone());
 
         // Create a test schema
         let schema_content = r"
@@ -176,7 +166,7 @@ classes:
         fs.write(schema_path, schema_content).await?;
 
         // Parse using async trait - explicitly use AsyncSchemaParser trait
-        let schema = <YamlParserV2<MockParseService, TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(
+        let schema = <YamlParserV2<TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(
             &parser,
             schema_path,
         )

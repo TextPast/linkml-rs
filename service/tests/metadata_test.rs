@@ -39,7 +39,7 @@ classes:
     name: Person
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
@@ -90,7 +90,7 @@ classes:
       - value: "survey_responses_2023"
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
@@ -157,7 +157,7 @@ slots:
     rank: 10
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");

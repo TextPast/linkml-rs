@@ -19,7 +19,8 @@
 //!
 //! Output is stored in a `data/` subdirectory alongside each source YAML file.
 
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::YamlParserV2;
+use linkml_service::file_system_adapter::TokioFileSystemAdapter;
 use linkml_service::generator::{
     Generator, RustGenerator, TypeQLGenerator,
     OwlRdfGenerator, RdfFormat, RdfMode,
@@ -29,8 +30,6 @@ use linkml_service::loader::{
     DataDumper, DataInstance, DumpOptions,
 };
 use linkml_core::types::SchemaDefinition;
-use logger_service::wiring::wire_testing_logger;
-use parse_service::NoLinkML;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -125,12 +124,9 @@ async fn process_schema_file(
     base_name: &str,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Parse schema
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
-    let parse_service = parse_service_handle.into_arc();
-    
-    let parser = Parser::new(parse_service);
-    let schema = parser.parse_str(yaml_content, "yaml").await?;
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(yaml_content)?;
     
     // Generate Rust code
     println!("  - Generating Rust code...");
@@ -206,12 +202,9 @@ async fn process_instance_file(
         .map_err(|e| Box::<dyn std::error::Error>::from(e))?;
     let schema_content = fs::read_to_string(&schema_path)?;
     
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
-    let parse_service = parse_service_handle.into_arc();
-    
-    let parser = Parser::new(parse_service);
-    let schema = parser.parse_str(&schema_content, "yaml").await
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(&schema_content)
         .map_err(|e| Box::<dyn std::error::Error>::from(format!("Schema parse error: {}", e)))?;
 
     // Extract instances array from the YAML

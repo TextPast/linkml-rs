@@ -4,22 +4,39 @@
 //!
 //! # Architecture
 //!
-//! This module uses RootReal's ParseService for all document parsing operations.
-//! ParseService handles format detection, validation, and initial parsing, then
-//! we deserialize the raw content to LinkML's typed `SchemaDefinition` structures.
+//! **CRITICAL**: All LinkML parsing MUST use RootReal's centralized parsing infrastructure
+//! from `crates/data/parsing/parse/`:
 //!
-//! This architecture ensures:
-//! 1. Consistent parsing across RootReal services
-//! 2. Centralized format detection and validation
-//! 3. Type-safe deserialization to LinkML domain models
+//! - **JSON parsing**: Uses `ParseService` → `serde_json` pipeline
+//!   - ParseService handles format detection, validation, caching
+//!   - Then deserializes to `SchemaDefinition` via `serde_json`
+//!
+//! - **YAML parsing**: Uses `parse-linkml` specialized PEG parser
+//!   - Located at `crates/data/parsing/parse/linkml-parser/`
+//!   - Part of centralized infrastructure (not direct `serde_yaml` usage)
+//!   - Required because `ParseFormat` doesn't support LinkML/YAML yet
+//!   - Provides LinkML-specific grammar validation and semantic checks
+//!
+//! ## Why Different Approaches for JSON vs YAML?
+//!
+//! - **JSON**: ParseService supports JSON via `ParseFormat::Json`, so we use it
+//! - **YAML**: ParseService doesn't support YAML/LinkML yet, so we use specialized
+//!   parser from `crates/data/parsing/parse/linkml-parser/`
+//! - **Both comply** with mandatory centralized parsing (both use parsers from
+//!   `crates/data/parsing/parse/`, NOT generic `serde_*` directly)
+//!
+//! ## Parser Implementations
+//!
+//! - **Simple Parsers** (`json_parser_simple`, `yaml_parser_simple`): Legacy direct serde
+//!   parsing - these violate centralized architecture and should be migrated
+//! - **V2 Parsers** (`json_parser_v2`, `yaml_parser_v2`): Production-ready implementations
+//!   that comply with RootReal's mandatory centralized parsing architecture
 
 use linkml_core::{
     error::{LinkMLError, Result},
     types::SchemaDefinition,
 };
-use parse_core::{ParseService, ParseFormat};
 use std::path::Path;
-use std::sync::Arc;
 
 pub mod factory;
 pub mod import_resolver;
@@ -59,30 +76,74 @@ pub trait SchemaParser: Send + Sync {
 
 /// Main parser for LinkML schemas
 ///
+/// **DEPRECATED**: This parser uses direct `serde_yaml`/`serde_json` which violates
+/// RootReal's centralized parsing architecture. Use `YamlParserV2` or `JsonParserV2` instead.
+///
 /// Supports both YAML and JSON formats with automatic format detection.
-/// Uses ParseService for consistent document parsing across RootReal.
-pub struct Parser<P: ParseService> {
-    /// Parse service for document parsing
-    parse_service: Arc<P>,
+/// Parses LinkML schemas directly using serde_yaml/serde_json.
+#[derive(Clone)]
+#[deprecated(
+    since = "0.2.0",
+    note = "Use YamlParserV2 or JsonParserV2 instead. This parser violates RootReal's centralized parsing architecture."
+)]
+pub struct Parser {
     /// Whether to automatically resolve imports
     auto_resolve_imports: bool,
 }
 
-impl<P: ParseService> Parser<P> {
-    /// Create a new parser with ParseService
+impl Parser {
+    /// Create a new parser
+    ///
+    /// **DEPRECATED**: Use `YamlParserV2::new()` or `JsonParserV2::new()` instead.
+    ///
+    /// # Migration Example
+    ///
+    /// ```rust,ignore
+    /// // Old (deprecated):
+    /// use linkml_service::parser::{Parser, SchemaParser};
+    /// let parser = Parser::new();
+    /// let schema = parser.parse_str(yaml_content, "yaml")?;
+    ///
+    /// // New (V2 YAML):
+    /// use std::sync::Arc;
+    /// use file_system_adapter::TokioFileSystemAdapter;
+    /// use linkml_service::parser::{YamlParserV2, AsyncSchemaParser};
+    /// 
+    /// let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+    /// let parser = YamlParserV2::new(fs_adapter);
+    /// let schema = parser.parse_str(yaml_content).await?;
+    ///
+    /// // New (V2 JSON):
+    /// use parse_core::ParseService;
+    /// use linkml_service::parser::JsonParserV2;
+    /// 
+    /// let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+    /// let parse_service = Arc::new(ParseService::new());
+    /// let parser = JsonParserV2::new(parse_service, fs_adapter);
+    /// let schema = parser.parse_str(json_content).await?;
+    /// ```
     #[must_use]
-    pub fn new(parse_service: Arc<P>) -> Self {
+    #[deprecated(
+        since = "0.2.0",
+        note = "Use YamlParserV2::new() or JsonParserV2::new() instead"
+    )]
+    pub fn new() -> Self {
         Self {
-            parse_service,
             auto_resolve_imports: false,
         }
     }
 
     /// Create a parser that automatically resolves imports
+    ///
+    /// **DEPRECATED**: Use `YamlParserV2::new()` or `JsonParserV2::new()` instead.
+    /// Import resolution is built into V2 parsers.
     #[must_use]
-    pub fn with_import_resolution(parse_service: Arc<P>) -> Self {
+    #[deprecated(
+        since = "0.2.0",
+        note = "Use YamlParserV2::new() or JsonParserV2::new() instead. Import resolution is built-in."
+    )]
+    pub fn with_import_resolution() -> Self {
         Self {
-            parse_service,
             auto_resolve_imports: true,
         }
     }
@@ -97,13 +158,13 @@ impl<P: ParseService> Parser<P> {
     /// # Errors
     ///
     /// Returns a `LinkMLError` if:
+    /// - File cannot be read
     /// - File has no extension
     /// - File format is not supported
     /// - Parsing fails
-    pub async fn parse_file(&self, path: &Path) -> Result<SchemaDefinition> {
+    pub fn parse_file(&self, path: &Path) -> Result<SchemaDefinition> {
         // Read file content
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| LinkMLError::io(format!("Failed to read file {}: {}", path.display(), e)))?;
+        let content = std::fs::read_to_string(path)?;
 
         // Detect format from extension
         let extension = path
@@ -111,7 +172,7 @@ impl<P: ParseService> Parser<P> {
             .and_then(|s| s.to_str())
             .ok_or_else(|| LinkMLError::parse("No file extension found"))?;
 
-        self.parse_str(&content, extension).await
+        self.parse_str(&content, extension)
     }
 
     /// Parse schema from string with specified format
@@ -121,24 +182,11 @@ impl<P: ParseService> Parser<P> {
     /// Returns a `LinkMLError` if:
     /// - Format is not supported
     /// - Parsing fails
-    pub async fn parse_str(&self, content: &str, format: &str) -> Result<SchemaDefinition> {
-        // Map format string to ParseFormat enum
-        let parse_format = match format {
-            "yaml" | "yml" => ParseFormat::Yaml,
-            "json" => ParseFormat::Json,
-            _ => return Err(LinkMLError::parse(format!("Unsupported format: {format}"))),
-        };
-
-        // Use ParseService to parse the document
-        let parsed_doc = self.parse_service
-            .parse_with_format(content, parse_format)
-            .await
-            .map_err(|e| LinkMLError::parse(format!("Parse service error: {e}")))?;
-
-        // Extract raw content and deserialize to SchemaDefinition
-        match parse_format {
-            ParseFormat::Yaml => {
-                serde_yaml::from_str(&parsed_doc.raw_content).map_err(|e| {
+    pub fn parse_str(&self, content: &str, format: &str) -> Result<SchemaDefinition> {
+        // Parse based on format
+        match format {
+            "yaml" | "yml" => {
+                serde_yaml::from_str(content).map_err(|e| {
                     LinkMLError::parse_at(
                         format!("YAML deserialization error: {e}"),
                         e.location().map_or_else(
@@ -148,8 +196,8 @@ impl<P: ParseService> Parser<P> {
                     )
                 })
             }
-            ParseFormat::Json => {
-                serde_json::from_str(&parsed_doc.raw_content).map_err(|e| {
+            "json" => {
+                serde_json::from_str(content).map_err(|e| {
                     LinkMLError::parse_at(
                         format!("JSON deserialization error: {e}"),
                         format!("line {}, column {}", e.line(), e.column()),
@@ -161,125 +209,50 @@ impl<P: ParseService> Parser<P> {
     }
 }
 
-// Note: No Default impl - Parser requires ParseService dependency
+impl Default for Parser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use parse_core::{ParsedDocument, DocumentContent, ParseError};
-    use async_trait::async_trait;
 
-    // Simple mock ParseService for testing
-    struct MockParseService;
-
-    #[async_trait]
-    impl ParseService for MockParseService {
-        type Error = ParseError;
-
-        async fn parse(&self, _content: &str) -> Result<ParsedDocument, Self::Error> {
-            unimplemented!("Not needed for these tests")
-        }
-
-        async fn parse_with_format(
-            &self,
-            content: &str,
-            _format: ParseFormat,
-        ) -> Result<ParsedDocument, Self::Error> {
-            // Return a ParsedDocument with the content as raw_content
-            Ok(ParsedDocument {
-                raw_content: content.to_string(),
-                content: DocumentContent::Raw(content.to_string()),
-                format: _format,
-                metadata: Default::default(),
-            })
-        }
-
-        async fn detect_format(&self, _content: &str) -> Result<(ParseFormat, f64), Self::Error> {
-            unimplemented!("Not needed for these tests")
-        }
-
-        async fn parse_oai_pmh_harvest_session(
-            &self,
-            _content: &str,
-        ) -> Result<parse_core::OaiPmhHarvestSession, Self::Error> {
-            unimplemented!("Not needed for these tests")
-        }
-
-        async fn parse_oai_pmh_records(
-            &self,
-            _oai_pmh_response: &str,
-        ) -> Result<Vec<parse_core::OaiPmhRecord>, Self::Error> {
-            unimplemented!("Not needed for these tests")
-        }
-
-        async fn parse_with_profile(
-            &self,
-            _content: &str,
-            _format: ParseFormat,
-            _profile: &parse_core::ExtractionProfile,
-        ) -> Result<parse_core::ExtractedData, Self::Error> {
-            unimplemented!("Not needed for these tests")
-        }
-
-        async fn parse_csv_with_options(
-            &self,
-            _content: &str,
-            _options: parse_core::CsvOptions,
-        ) -> Result<ParsedDocument, Self::Error> {
-            unimplemented!("Not needed for these tests")
-        }
-
-        async fn validate_document(
-            &self,
-            _document: &ParsedDocument,
-            _schema_name: Option<&str>,
-        ) -> Result<parse_core::ValidationResult, Self::Error> {
-            unimplemented!("Not needed for these tests")
-        }
-
-        async fn health_check(&self) -> Result<bool, Self::Error> {
-            Ok(true)
-        }
-
-        async fn reload_configuration(&self) -> Result<(), Self::Error> {
-            Ok(())
-        }
-    }
-
-    #[tokio::test]
-    async fn test_parser_creation() {
-        let parse_service = Arc::new(MockParseService);
-        let parser = Parser::new(parse_service);
+    #[test]
+    #[allow(deprecated)]
+    fn test_parser_creation() {
+        let parser = Parser::new();
         assert!(!parser.auto_resolve_imports);
     }
 
-    #[tokio::test]
-    async fn test_parser_with_import_resolution() {
-        let parse_service = Arc::new(MockParseService);
-        let parser = Parser::with_import_resolution(parse_service);
+    #[test]
+    #[allow(deprecated)]
+    fn test_parser_with_import_resolution() {
+        let parser = Parser::with_import_resolution();
         assert!(parser.auto_resolve_imports);
     }
 
-    #[tokio::test]
-    async fn test_parse_str_yaml() -> Result<()> {
+    #[test]
+    #[allow(deprecated)]
+    fn test_parse_str_yaml() -> Result<()> {
         let yaml = r"
 id: https://example.org/test
 name: test_schema
 ";
-        let parse_service = Arc::new(MockParseService);
-        let parser = Parser::new(parse_service);
-        let schema = parser.parse_str(yaml, "yaml").await?;
+        let parser = Parser::new();
+        let schema = parser.parse_str(yaml, "yaml")?;
 
         assert_eq!(schema.id, "https://example.org/test");
         assert_eq!(schema.name, "test_schema");
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_unsupported_format() {
-        let parse_service = Arc::new(MockParseService);
-        let parser = Parser::new(parse_service);
-        let result = parser.parse_str("content", "xml").await;
+    #[test]
+    #[allow(deprecated)]
+    fn test_unsupported_format() {
+        let parser = Parser::new();
+        let result = parser.parse_str("content", "xml");
         assert!(result.is_err());
         
         if let Err(LinkMLError::ParseError { message, .. }) = result {

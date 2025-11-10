@@ -19,7 +19,7 @@ slots:
       - range: integer
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
@@ -48,7 +48,7 @@ slots:
       - pattern: "^\\d+$"
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
@@ -79,7 +79,7 @@ slots:
         maximum_value: 1
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
@@ -109,7 +109,7 @@ slots:
       - pattern: "^demo"
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
@@ -141,7 +141,7 @@ slots:
           - pattern: "^[A-Z]"
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
@@ -260,7 +260,7 @@ slots:
       - maximum_value: 10
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 
@@ -306,7 +306,7 @@ slots:
         inlined_as_list: false
 "#;
 
-    let parser = linkml_service::parser::YamlParserSimple::new();
+    let parser = linkml_service::parser::create_test_parser();
     let schema = parser.parse_str(yaml, "yaml")
         .expect("Test operation failed");
 

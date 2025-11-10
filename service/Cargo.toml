@@ -155,6 +155,7 @@ telemetry_core = { workspace = true }
 lakehouse_core = { workspace = true }
 parse_core = { workspace = true }
 parse_service = { workspace = true }
+parse-linkml = { workspace = true }
 timeout_core = { workspace = true }
 random_core = { workspace = true }
 random_service = { workspace = true }

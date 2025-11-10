@@ -4,12 +4,14 @@
 //! LinkML schemas into TypeDB schemas with exceptional performance.
 
 use linkml_core::prelude::*;
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::{YamlParserV2, SchemaParser};
+use linkml_service::file_system_adapter::TokioFileSystemAdapter;
 use linkml_service::generator::{
     Generator,
     GeneratorOptions,
     // typeql_generator_enhanced::{EnhancedTypeQLGenerator, create_enhanced_typeql_generator},
 };
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -59,8 +61,10 @@ slots:
     range: integer
 "#;
 
-    let parser = Parser::new();
-    let schema = parser.parse_str(simple_schema, "yaml")?;
+    // Parse using V2 parser with centralized architecture
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(simple_schema)?;
 
     // Generate TypeQL using the factory function
     let generator = create_enhanced_typeql_generator();
@@ -151,7 +155,7 @@ slots:
     range: datetime
 "#;
 
-    let relation_schema = parser.parse_str(relation_schema, "yaml")?;
+    let relation_schema = parser.parse_str(relation_schema)?;
 
     println!(
         "
@@ -209,7 +213,7 @@ enums:
         description: Document is published
 "#;
 
-    let rule_schema = parser.parse_str(rule_schema, "yaml")?;
+    let rule_schema = parser.parse_str(rule_schema)?;
 
     println!(
         "

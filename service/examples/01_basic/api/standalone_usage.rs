@@ -8,11 +8,10 @@ use linkml_service::{
     generator::{
         GeneratorOptions, RustGenerator, TypeQLGenerator, typeql_generator::create_typeql_generator,
     },
-    parser::{Parser, SchemaParser},
+    parser::{SchemaParser, YamlParserV2},
     validator::{ValidationReport, Validator},
 };
-use logger_service::wiring::wire_testing_logger;
-use parse_service::NoLinkML;
+use parse_service::filesystem::TokioFileSystemAdapter;
 use serde_json::json;
 use std::error::Error;
 use std::sync::Arc;
@@ -99,13 +98,10 @@ classes:
     // Parse the schema
     println!("1. Parsing LinkML schema...");
     
-    // Wire ParseService
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
-    let parse_service = parse_service_handle.into_arc();
-    
-    let parser = Parser::new(parse_service);
-    let schema = parser.parse_str(schema_yaml, "yaml").await?;
+    // Use V2 parser (synchronous, no wiring needed)
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(schema_yaml)?;
     println!("   ✓ Schema parsed successfully: {}", schema.name.as_ref()?);
 
     // Create test data

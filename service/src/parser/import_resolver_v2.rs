@@ -22,6 +22,8 @@ use std::pin::Pin;
 use std::sync::Arc;
 use tokio::fs;
 
+use crate::parser::SchemaParser;
+
 /// Import specification with advanced options
 #[derive(Debug, Clone)]
 pub struct ImportSpec {
@@ -50,7 +52,7 @@ impl From<String> for ImportSpec {
 }
 
 /// Enhanced import resolver with advanced capabilities
-pub struct ImportResolverV2<P: ParseService> {
+pub struct ImportResolverV2 {
     /// Cache of resolved schemas
     cache: Arc<RwLock<HashMap<String, SchemaDefinition>>>,
     /// Import settings from schema
@@ -61,54 +63,48 @@ pub struct ImportResolverV2<P: ParseService> {
     fallback_client: reqwest::Client,
     /// Visited imports for circular dependency detection
     visited_stack: Arc<RwLock<Vec<String>>>,
-    /// Parse service for schema parsing
-    parse_service: Arc<P>,
 }
 
-impl<P: ParseService> ImportResolverV2<P> {
+impl ImportResolverV2 {
     /// Create a new import resolver with default settings
     #[must_use]
-    pub fn new(parse_service: Arc<P>) -> Self {
+    pub fn new() -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(ImportSettings::default())),
             http_client: None,
             fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
-            parse_service,
         }
     }
 
     /// Create with schema settings
     #[must_use]
-    pub fn with_settings(parse_service: Arc<P>, settings: ImportSettings) -> Self {
+    pub fn with_settings(settings: ImportSettings) -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(settings)),
             http_client: None,
             fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
-            parse_service,
         }
     }
 
     /// Create with external API HTTP client (production-ready with rate limiting, caching, retries)
     #[must_use]
-    pub fn with_http_client(parse_service: Arc<P>, http_client: Arc<dyn HttpClient>) -> Self {
+    pub fn with_http_client(http_client: Arc<dyn HttpClient>) -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(ImportSettings::default())),
             http_client: Some(http_client),
             fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
-            parse_service,
         }
     }
 
     /// Create with both settings and HTTP client
     #[must_use]
     pub fn with_settings_and_client(
-        parse_service: Arc<P>,
         settings: ImportSettings,
         http_client: Arc<dyn HttpClient>,
     ) -> Self {
@@ -118,7 +114,6 @@ impl<P: ParseService> ImportResolverV2<P> {
             http_client: Some(http_client),
             fallback_client: reqwest::Client::new(),
             visited_stack: Arc::new(RwLock::new(Vec::new())),
-            parse_service,
         }
     }
 
@@ -574,18 +569,26 @@ impl<P: ParseService> ImportResolverV2<P> {
 
     /// Parse schema content based on format
     async fn parse_schema_content(&self, content: &str, source: &str) -> Result<SchemaDefinition> {
-        use crate::parser::Parser;
+        use crate::parser::YamlParserV2;
+        use crate::file_system_adapter::TokioFileSystemAdapter;
 
         // Determine format from extension (case-insensitive)
-        let format = if source.to_lowercase().ends_with(".json") {
-            "json"
-        } else {
-            // Default to YAML
-            "yaml"
-        };
+        let is_json = source.to_lowercase().ends_with(".json");
 
-        let parser = Parser::new(self.parse_service.clone());
-        parser.parse_str(content, format).await
+        if is_json {
+            // Direct JSON deserialization for imported schemas
+            // TODO: Integrate with ParseService once available via DI
+            serde_json::from_str(content).map_err(|e| {
+                LinkMLError::parse_at(
+                    format!("JSON deserialization error: {e}"),
+                    format!("line {}, column {}", e.line(), e.column()),
+                )
+            })
+        } else {
+            let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+            let parser = YamlParserV2::new(fs_adapter);
+            parser.parse_str(content)
+        }
     }
 
     /// Merge imported schema into target schema
@@ -734,6 +737,12 @@ impl<P: ParseService> ImportResolverV2<P> {
     }
 }
 
+impl Default for ImportResolverV2 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -805,10 +814,14 @@ classes:
 "#;
 
         // Parse and resolve
-        use crate::parser::{Parser, SchemaParser};
-        let parser = Parser::new();
+        use crate::parser::YamlParserV2;
+        use file_system_adapter::TokioFileSystemAdapter;
+        
+        let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+        let parser = YamlParserV2::new(fs_adapter);
         let mut schema = parser
-            .parse_str(main_schema, "yaml")
+            .parse_str(main_schema)
+            .await
             .expect("should parse main schema: {}");
 
         // Set base path for resolver
@@ -871,9 +884,14 @@ imports:
             .expect("should write schema b: {}");
 
         // Try to resolve - should fail
-        let parser = Parser::new();
+        use crate::parser::YamlParserV2;
+        use file_system_adapter::TokioFileSystemAdapter;
+        
+        let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+        let parser = YamlParserV2::new(fs_adapter);
         let schema = parser
-            .parse_str(schema_a, "yaml")
+            .parse_str(schema_a)
+            .await
             .expect("should parse schema a: {}");
 
         let settings = ImportSettings {

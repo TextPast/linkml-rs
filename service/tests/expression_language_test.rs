@@ -442,7 +442,7 @@ fn test_expression_engine_operator_precedence() {
 
 #[test]
 fn test_parser_edge_cases() {
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
 
     // Empty expression
     assert!(parser.parse("").is_err());

@@ -52,9 +52,13 @@ classes:
       - domain
 "#;
 
-    // Parse the schema
-    use linkml_service::parser::{YamlParserSimple, SchemaParser};
-    let parser = YamlParserSimple::new();
+    // Parse the schema using V2 parser with centralized architecture
+    use linkml_service::parser::{YamlParserV2, SchemaParser};
+    use linkml_service::file_system_adapter::TokioFileSystemAdapter;
+    use std::sync::Arc;
+    
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
     let schema = parser.parse_str(schema_yaml)?;
 
     println!("Loaded schema: {}", schema.name);

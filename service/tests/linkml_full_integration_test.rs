@@ -6,6 +6,7 @@
 
 use linkml_service::{
     expression::{Evaluator, Parser as ExpressionParser},
+    file_system_adapter::TokioFileSystemAdapter,
     generator::{
         java::JavaGenerator,
         javascript::JavaScriptGenerator,
@@ -19,7 +20,7 @@ use linkml_service::{
         traits::{Generator, GeneratorOptions},
         typescript::TypeScriptGenerator,
     },
-    parser::{YamlParserSimple, SchemaParser},
+    parser::{YamlParserV2, SchemaParser},
     rule_engine::{RuleEngine, RuleExecutionStrategy},
     schema_view::SchemaView,
     transform::{
@@ -34,11 +35,18 @@ use linkml_service::{
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::fs;
+use std::sync::Arc;
 use std::time::Instant;
 use tempfile::TempDir;
 use linkml_core::types::SchemaDefinition;
 use linkml_core::types::{ValidationReport};
 
+
+/// Helper function to create V2 parser for tests
+fn create_test_parser() -> impl SchemaParser {
+    let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+    YamlParserV2::new(fs_adapter)
+}
 
 /// Test data representing a biomedical research schema with complex validation rules
 const BIOMEDICAL_SCHEMA: &str = r#"
@@ -391,7 +399,7 @@ async fn test_biomedical_research_workflow() {
     let start = Instant::now();
 
     // Load the complex biomedical schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(BIOMEDICAL_SCHEMA, "yaml")
         .expect("Test operation failed");
@@ -579,7 +587,7 @@ async fn test_multi_tenant_config_validation() {
     println!("=== Testing Multi-Tenant Configuration Workflow ===");
 
     // Load configuration schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(CONFIG_SCHEMA, "yaml")
         .expect("Test operation failed");
@@ -659,7 +667,7 @@ async fn test_schema_view_introspection() {
     println!("=== Testing SchemaView Introspection ===");
 
     // Load biomedical schema
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(BIOMEDICAL_SCHEMA, "yaml")
         .expect("Test operation failed");
@@ -739,7 +747,7 @@ classes:
         required: true
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let base_schema = parser
         .parse_str(base_schema_str, "yaml")
         .expect("Test operation failed");
@@ -805,7 +813,7 @@ classes:
         maximum_value: 150
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse_str(schema_str, "yaml").expect("Test operation failed");
     let engine = ValidationEngine::new(schema);
     let options = ValidationOptions::default();
@@ -860,7 +868,7 @@ classes:
 async fn test_code_generation_all_targets() {
     println!("=== Testing Code Generation for All Targets ===");
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(CONFIG_SCHEMA, "yaml")
         .expect("Test operation failed");
@@ -975,7 +983,7 @@ enums:
       secret:
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let mut schema = parser.parse_str(schema_str, "yaml").expect("Test operation failed");
 
     // Resolve inheritance
@@ -1041,7 +1049,7 @@ enums:
 async fn test_rule_engine_with_expressions() {
     println!("=== Testing Rule Engine with Complex Expressions ===");
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(BIOMEDICAL_SCHEMA, "yaml")
         .expect("Test operation failed");
@@ -1150,7 +1158,7 @@ enums:
       archived:
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(api_schema_str, "yaml")
         .expect("Test operation failed");

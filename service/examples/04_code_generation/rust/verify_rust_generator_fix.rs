@@ -4,8 +4,10 @@
 //! struct fields instead of TODO comments.
 
 use linkml_service::generator::GeneratorRegistry;
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::{YamlParserV2, SchemaParser};
+use linkml_service::file_system_adapter::TokioFileSystemAdapter;
 use std::error::Error;
+use std::sync::Arc;
 
 fn main() -> std::result::Result<(), Box<dyn Error>> {
     println!(
@@ -100,9 +102,10 @@ enums:
     println!("{}", schema_yaml);
     println!("{}", "─".repeat(60));
 
-    // Parse the schema
-    let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    // Parse the schema using V2 parser with centralized architecture
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(schema_yaml)?;
 
     println!(
         "

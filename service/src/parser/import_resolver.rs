@@ -22,8 +22,6 @@ pub struct ImportResolver {
     base_url: Arc<RwLock<Option<String>>>,
     /// Maximum import depth to prevent infinite recursion
     max_depth: usize,
-    /// Parse service for loading schema files
-    parse_service: Option<Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>>,
 }
 
 impl Default for ImportResolver {
@@ -42,7 +40,6 @@ impl ImportResolver {
             base_path: Arc::new(RwLock::new(None)),
             base_url: Arc::new(RwLock::new(None)),
             max_depth: 10,
-            parse_service: None,
         }
     }
 
@@ -55,16 +52,7 @@ impl ImportResolver {
             base_path: Arc::new(RwLock::new(None)),
             base_url: Arc::new(RwLock::new(None)),
             max_depth: 10,
-            parse_service: None,
         }
-    }
-
-    /// Set the parse service for loading schema files
-    pub fn set_parse_service(
-        &mut self,
-        parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>>,
-    ) {
-        self.parse_service = Some(parse_service);
     }
 
     /// Set the base path for relative imports
@@ -202,12 +190,8 @@ impl ImportResolver {
     async fn load_schema_file(&self, path: &Path) -> Result<SchemaDefinition> {
         use super::Parser;
 
-        let parse_service = self.parse_service.as_ref().ok_or_else(|| {
-            LinkMLError::service("ImportResolver: parse_service not initialized".to_string())
-        })?;
-
-        let parser = Parser::new(parse_service.clone());
-        parser.parse_file(path).await
+        let parser = Parser::new();
+        parser.parse_file(path)
     }
 
     /// Merge an imported schema into the current schema

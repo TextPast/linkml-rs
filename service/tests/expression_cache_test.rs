@@ -1,5 +1,8 @@
 //! Tests for expression result caching
 
+mod helpers;
+
+use helpers::parser_v2_helpers::create_test_yaml_parser;
 use linkml_service::expression::{Evaluator, EvaluatorConfig, Parser};
 use serde_json::json;
 use std::collections::HashMap;
@@ -14,7 +17,7 @@ fn test_expression_cache_hit() {
     };
 
     let evaluator = Evaluator::with_config(config);
-    let parser = YamlParserSimple::new();
+    let parser = Parser::new();
 
     // Create a complex expression that takes some time to evaluate
     let expr = parser
@@ -61,7 +64,7 @@ fn test_expression_cache_miss_on_different_context() {
     };
 
     let evaluator = Evaluator::with_config(config);
-    let parser = YamlParserSimple::new();
+    let parser = Parser::new();
 
     let expr = parser.parse("len(name)").expect("Test operation failed");
 
@@ -98,7 +101,7 @@ fn test_expression_cache_disabled() {
     };
 
     let evaluator = Evaluator::with_config(config);
-    let parser = YamlParserSimple::new();
+    let parser = Parser::new();
 
     let expr = parser.parse("1 + 1").expect("Test operation failed");
     let context = HashMap::new();
@@ -127,7 +130,7 @@ fn test_expression_cache_clear() {
     };
 
     let evaluator = Evaluator::with_config(config);
-    let parser = YamlParserSimple::new();
+    let parser = Parser::new();
 
     let expr = parser.parse("2 + 3").expect("Test operation failed");
     let context = HashMap::new();
@@ -161,7 +164,7 @@ fn test_expression_cache_lru_eviction() {
     };
 
     let evaluator = Evaluator::with_config(config);
-    let parser = YamlParserSimple::new();
+    let parser = Parser::new();
 
     // Evaluate 4 different expressions (more than cache size)
     for i in 0..4 {
@@ -190,7 +193,7 @@ fn test_expression_cache_with_functions() {
     };
 
     let evaluator = Evaluator::with_config(config);
-    let parser = YamlParserSimple::new();
+    let parser = Parser::new();
 
     // Expression with function calls
     let expr = parser
@@ -231,7 +234,7 @@ fn test_expression_cache_complex_context() {
     };
 
     let evaluator = Evaluator::with_config(config);
-    let parser = YamlParserSimple::new();
+    let parser = Parser::new();
 
     let expr = parser
         .parse("data.count * data.price")

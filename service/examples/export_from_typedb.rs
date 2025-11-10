@@ -12,18 +12,15 @@
 
 use clap::Parser;
 use linkml_core::types::SchemaDefinition;
-use linkml_service::parser::{Parser as LinkmlParser, SchemaLoader};
+use linkml_service::parser::SchemaLoader;
 use linkml_service::loader::{
     DataDumper, DumpOptions,
     RdfDumper, RdfSerializationFormat, RdfOptions,
     TypeDBIntegrationLoader, TypeDBIntegrationOptions,
     DataLoader, LoadOptions,
 };
-use logger_service::wiring::wire_testing_logger;
-use parse_service::NoLinkML;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 #[derive(Parser, Debug)]
 #[command(name = "export_from_typedb")]
@@ -78,19 +75,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("  Server: {}", args.server);
     println!();
 
-    // Wire ParseService
-    println!("Wiring ParseService...");
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger.clone())
-        .await
-        .map_err(|e| Box::<dyn std::error::Error>::from(format!("Parse service wiring error: {}", e)))?;
-    let parse_service: Arc<dyn parse_core::ParseService<Error = parse_core::ParseError>> = 
-        parse_service_handle.into_arc();
-    println!("  ✓ ParseService wired");
-
     // Load LinkML schema
     println!("Loading LinkML schema...");
-    let loader = SchemaLoader::new(parse_service);
+    let loader = SchemaLoader::new();
     let schema: SchemaDefinition = loader.load_file(&args.schema)
         .await
         .map_err(|e| Box::<dyn std::error::Error>::from(format!("Schema load error: {}", e)))?;

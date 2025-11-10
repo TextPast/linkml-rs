@@ -1,8 +1,41 @@
 //! JSON parser v2 using ParseService and file system adapter
 //!
-//! This version uses RootReal's `ParseService` for all parsing operations,
-//! following the centralized parsing architecture. File system operations
-//! are handled via the `FileSystemOperations` trait.
+//! # Architecture
+//!
+//! This parser implements RootReal's **mandatory centralized parsing architecture**.
+//! All JSON parsing operations MUST use `ParseService` from `crates/data/parsing/parse/`.
+//!
+//! ## Why Centralized Parsing?
+//!
+//! Using ParseService instead of direct `serde_json` provides critical benefits:
+//!
+//! 1. **Consistent Error Handling**: Unified error types and recovery strategies
+//! 2. **Telemetry Integration**: All parsing operations are monitored and logged
+//! 3. **Caching**: Frequently accessed schemas are cached for performance
+//! 4. **Validation**: Centralized validation rules applied consistently
+//! 5. **Format Detection**: Automatic format detection and conversion
+//! 6. **Security**: Centralized input sanitization and size limits
+//!
+//! ## Integration Pattern
+//!
+//! ```rust,ignore
+//! // 1. ParseService performs initial parsing and validation
+//! let parsed_doc = self.parse_service
+//!     .parse_with_format(content, ParseFormat::Json(...))
+//!     .await?;
+//!
+//! // 2. Extract validated text from ParsedDocument
+//! let text = match &parsed_doc.content {
+//!     DocumentContent::Text(s) => s.as_str(),
+//!     _ => return Err(...),
+//! };
+//!
+//! // 3. Deserialize into LinkML SchemaDefinition
+//! serde_json::from_str::<SchemaDefinition>(text)?
+//! ```
+//!
+//! File system operations are handled via the `FileSystemOperations` trait
+//! for sandboxed, testable file access.
 
 use linkml_core::{
     error::{LinkMLError, Result},
@@ -16,6 +49,7 @@ use super::{AsyncSchemaParser, SchemaParser};
 use crate::file_system_adapter::FileSystemOperations;
 
 /// `JSON` parser implementation with ParseService and file system adapter
+#[derive(Clone)]
 pub struct JsonParserV2<P: ParseService, F: FileSystemOperations> {
     parse_service: Arc<P>,
     fs: Arc<F>,
@@ -30,12 +64,18 @@ impl<P: ParseService, F: FileSystemOperations> JsonParserV2<P, F> {
 
 impl<P: ParseService, F: FileSystemOperations> SchemaParser for JsonParserV2<P, F> {
     fn parse_str(&self, content: &str) -> Result<SchemaDefinition> {
-        // Use ParseService, then deserialize from raw_content
+        // Use ParseService, then deserialize from content
         let parsed_doc = tokio::runtime::Handle::current()
-            .block_on(self.parse_service.parse_with_format(content, ParseFormat::Json))
+            .block_on(self.parse_service.parse_with_format(content, ParseFormat::Json(parse_core::JsonFormat::Standard)))
             .map_err(|e| LinkMLError::parse(format!("Parse service error: {e}")))?;
 
-        serde_json::from_str(&parsed_doc.raw_content).map_err(|e| {
+        // Extract text from DocumentContent
+        let text = match &parsed_doc.content {
+            parse_core::DocumentContent::Text(s) => s.as_str(),
+            _ => return Err(LinkMLError::parse("Expected text content from JSON parser")),
+        };
+
+        serde_json::from_str(text).map_err(|e| {
             LinkMLError::parse_at(
                 format!("JSON deserialization error: {e}"),
                 format!("line {}, column {}", e.line(), e.column()),
@@ -61,14 +101,20 @@ impl<P: ParseService, F: FileSystemOperations> SchemaParser for JsonParserV2<P, 
 #[async_trait::async_trait]
 impl<P: ParseService, F: FileSystemOperations> AsyncSchemaParser for JsonParserV2<P, F> {
     async fn parse_str(&self, content: &str) -> Result<SchemaDefinition> {
-        // Use ParseService, then deserialize from raw_content
+        // Use ParseService, then deserialize from content
         let parsed_doc = self
             .parse_service
-            .parse_with_format(content, ParseFormat::Json)
+            .parse_with_format(content, ParseFormat::Json(parse_core::JsonFormat::Standard))
             .await
             .map_err(|e| LinkMLError::parse(format!("Parse service error: {e}")))?;
 
-        serde_json::from_str(&parsed_doc.raw_content).map_err(|e| {
+        // Extract text from DocumentContent
+        let text = match &parsed_doc.content {
+            parse_core::DocumentContent::Text(s) => s.as_str(),
+            _ => return Err(LinkMLError::parse("Expected text content from JSON parser")),
+        };
+
+        serde_json::from_str(text).map_err(|e| {
             LinkMLError::parse_at(
                 format!("JSON deserialization error: {e}"),
                 format!("line {}, column {}", e.line(), e.column()),
@@ -107,21 +153,27 @@ mod tests {
 
         async fn parse(&self, content: &str) -> std::result::Result<ParsedDocument, Self::Error> {
             Ok(ParsedDocument {
-                raw_content: content.to_string(),
-                format: ParseFormat::Json,
+                id: "mock".to_string(),
+                format: ParseFormat::Json(parse_core::JsonFormat::Standard),
                 metadata: Default::default(),
+                content: parse_core::DocumentContent::Text(content.to_string()),
+                validation_status: None,
+                parsing_metadata: None,
             })
         }
 
         async fn parse_with_format(
             &self,
             content: &str,
-            _format: ParseFormat,
+            format: ParseFormat,
         ) -> std::result::Result<ParsedDocument, Self::Error> {
             Ok(ParsedDocument {
-                raw_content: content.to_string(),
-                format: ParseFormat::Json,
+                id: "mock".to_string(),
+                format,
                 metadata: Default::default(),
+                content: parse_core::DocumentContent::Text(content.to_string()),
+                validation_status: None,
+                parsing_metadata: None,
             })
         }
     }

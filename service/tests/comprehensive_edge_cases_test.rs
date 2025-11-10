@@ -308,7 +308,7 @@ async fn test_concurrent_edge_case_validation() -> Result<()> {
 /// Test schema loading edge cases
 #[tokio::test]
 async fn test_schema_loading_edge_cases() -> Result<()> {
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
 
     // Test various malformed schema inputs
     let malformed_schemas = vec![

@@ -103,7 +103,7 @@ slots:
       ui:widget: email-input
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");
@@ -171,7 +171,7 @@ classes:
           max_size: 1000000
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser
         .parse_str(yaml_content, "yaml")
         .expect("Test operation failed");

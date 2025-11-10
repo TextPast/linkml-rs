@@ -1,0 +1,37 @@
+# Schema demonstrating imports with txp: prefix
+id: https://textpast.org/schema/test/imports
+name: imports_schema
+title: Imports Test Schema
+description: A schema testing various import patterns
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+  txp: https://textpast.org/schema/
+  schema: http://schema.org/
+
+imports:
+  - linkml:types
+  - txp:meta/identifier/identifier/schema
+  - txp:meta/description/description/schema
+
+classes:
+  DocumentWithMetadata:
+    description: A document with rich metadata
+    slots:
+      - identifier
+      - title
+      - description
+
+slots:
+  identifier:
+    description: Unique identifier
+    range: string
+    required: true
+  
+  title:
+    description: Document title
+    range: string
+  
+  description:
+    description: Document description
+    range: string

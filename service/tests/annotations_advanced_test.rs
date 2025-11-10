@@ -224,7 +224,7 @@ slots:
         maxLength: 100
 "#;
 
-    let parser = YamlParserSimple::new();
+    let parser = create_test_parser();
     let schema = parser.parse_str(yaml, "yaml").expect("Test operation failed");
 
     // Check schema annotations

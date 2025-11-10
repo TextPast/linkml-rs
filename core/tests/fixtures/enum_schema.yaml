@@ -1,0 +1,51 @@
+# Schema demonstrating enum definitions
+id: https://example.org/enums
+name: enum_schema
+title: Enum Schema
+description: A schema with various enum definitions
+
+enums:
+  StatusEnum:
+    description: Status values
+    permissible_values:
+      active:
+        description: Currently active
+        meaning: schema:Active
+      inactive:
+        description: No longer active
+        meaning: schema:Inactive
+      pending:
+        description: Awaiting activation
+        meaning: schema:Pending
+  
+  PriorityEnum:
+    description: Priority levels
+    permissible_values:
+      low:
+        description: Low priority
+      medium:
+        description: Medium priority
+      high:
+        description: High priority
+      critical:
+        description: Critical priority
+
+classes:
+  Task:
+    description: A task with status and priority
+    slots:
+      - name
+      - status
+      - priority
+
+slots:
+  name:
+    range: string
+    required: true
+  
+  status:
+    range: StatusEnum
+    required: true
+  
+  priority:
+    range: PriorityEnum

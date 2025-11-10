@@ -4,6 +4,9 @@
 //! Abstract Syntax Tree (AST) structures. The parser uses the Pest parsing
 //! library with a grammar defined in `../../grammar/linkml.pest`.
 
+// Allow missing docs for Pest-generated code
+#![allow(missing_docs)]
+
 use indexmap::IndexMap;
 use pest::Parser;
 use pest_derive::Parser;
@@ -12,6 +15,7 @@ use crate::ast::*;
 use crate::error::{LinkMLError, Result};
 
 /// Pest parser for LinkML YAML syntax
+#[allow(missing_docs)]
 #[derive(Parser)]
 #[grammar = "../../grammar/linkml.pest"]
 pub struct LinkMLParser;
@@ -211,12 +215,9 @@ impl LinkMLParser {
                 schema.see_also = Self::parse_string_list(pair)?;
             }
             Rule::schema_annotations => {
-                for inner in pair.into_inner() {
-                    if matches!(inner.as_rule(), Rule::annotations) {
-                        let annotations = Self::parse_annotations(inner)?;
-                        schema.annotations = Some(Self::create_spanned(&inner, annotations));
-                    }
-                }
+                // Process annotation entries directly from schema_annotations
+                let annotations = Self::parse_annotations(pair.clone())?;
+                schema.annotations = Some(Self::create_spanned(&pair, annotations));
             }
             _ => {
                 // Ignore unknown fields or continue
@@ -660,7 +661,7 @@ impl LinkMLParser {
     fn parse_permissible_values(pair: Pair<'_>) -> Result<IndexMap<String, Spanned<PermissibleValueAst>>> {
         let mut values = IndexMap::new();
         for inner in pair.into_inner() {
-            if inner.as_rule() == Rule::permissible_value {
+            if inner.as_rule() == Rule::permissible_value_entry {
                 let mut parts = inner.into_inner();
                 if let Some(name_pair) = parts.next() {
                     if name_pair.as_rule() == Rule::identifier {
@@ -702,7 +703,7 @@ impl LinkMLParser {
     fn parse_contributors(pair: Pair<'_>) -> Result<Vec<Spanned<ContributorAst>>> {
         let mut contributors = Vec::new();
         for inner in pair.into_inner() {
-            if inner.as_rule() == Rule::contributor {
+            if inner.as_rule() == Rule::contributor_entry {
                 let name = inner.as_str().to_string();
                 let contributor = ContributorAst {
                     name: name.clone(),

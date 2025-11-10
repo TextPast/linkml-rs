@@ -2,10 +2,9 @@
 
 use anyhow::Result;
 use linkml_core::prelude::*;
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::YamlParserV2;
+use linkml_service::file_system_adapter::TokioFileSystemAdapter;
 use linkml_service::validator::ValidationEngine;
-use logger_service::wiring::wire_testing_logger;
-use parse_service::NoLinkML;
 use serde_json::json;
 use std::sync::Arc;
 
@@ -46,12 +45,9 @@ slots:
   final_price: {range: float}
 "#;
 
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
-    let parse_service = parse_service_handle.into_arc();
-    
-    let parser = Parser::new(parse_service);
-    let schema = parser.parse_str(schema_yaml, "yaml").await?;
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(schema_yaml)?;
     let engine = ValidationEngine::new(Arc::new(schema));
 
     let product = json!({
@@ -97,12 +93,9 @@ slots:
   express_shipping: {range: boolean, required: true}
 "#;
 
-    let logger = wire_testing_logger()?.into_arc();
-    let parse_service_handle = parse_service::wiring::wire_parse_for_testing::<NoLinkML>(logger).await?;
-    let parse_service = parse_service_handle.into_arc();
-    
-    let parser = Parser::new(parse_service);
-    let schema = parser.parse_str(schema_yaml, "yaml").await?;
+    let fs = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs);
+    let schema = parser.parse_str(schema_yaml)?;
     let engine = ValidationEngine::new(Arc::new(schema));
 
     let order = json!({

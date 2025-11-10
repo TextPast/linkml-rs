@@ -3,10 +3,10 @@
 //! This module validates configuration files against the `LinkML` configuration schema.
 
 use super::{LinkMLConfig, load_config};
-use crate::parser::Parser;
+use crate::parser::{AsyncSchemaParser, YamlParserV2};
+use crate::file_system_adapter::TokioFileSystemAdapter;
 use crate::validator::{ValidationEngine, ValidationOptions};
 use linkml_core::error::LinkMLError;
-use parse_service::ParseService;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -22,11 +22,11 @@ use std::sync::Arc;
 /// - Configuration validation fails
 pub async fn validate_config(
     config: &LinkMLConfig,
-    parse_service: Arc<dyn ParseService>,
 ) -> linkml_core::error::Result<()> {
     // Load the configuration schema using centralized parser
     let schema_path = Path::new("config/schema/linkml-config-schema.yaml");
-    let parser = Parser::new(parse_service);
+    let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+    let parser = YamlParserV2::new(fs_adapter);
     let schema = parser.parse_file(schema_path).await?;
 
     // Build validator
@@ -71,10 +71,9 @@ pub async fn validate_config(
 /// - The configuration fails validation
 pub async fn load_and_validate_config(
     path: &Path,
-    parse_service: Arc<dyn ParseService>,
 ) -> linkml_core::error::Result<LinkMLConfig> {
     let config: LinkMLConfig = load_config(path)?;
-    validate_config(&config, parse_service).await?;
+    validate_config(&config).await?;
     Ok(config)
 }
 
