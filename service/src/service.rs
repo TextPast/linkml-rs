@@ -162,7 +162,7 @@ where
     json_parser: JsonParserV2<P, TokioFileSystemAdapter>,
 
     // Import resolver
-    import_resolver: ImportResolver,
+    import_resolver: ImportResolver<P, TokioFileSystemAdapter>,
 
     // Schema cache
     schema_cache: Arc<RwLock<HashMap<String, SchemaDefinition>>>,
@@ -206,7 +206,6 @@ where
     /// Returns an error if service creation fails
     pub fn new(deps: LinkMLServiceDependencies<T, E, C, O, R, P>) -> Result<Self> {
         let default_config = LinkMLConfig::default();
-        let import_resolver = ImportResolver::new();
         let config = Arc::new(RwLock::new(default_config));
 
         // Create validator cache with RootReal cache service integration
@@ -217,7 +216,10 @@ where
         // Create V2 parsers
         let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
         let yaml_parser = YamlParserV2::new(fs_adapter.clone());
-        let json_parser = JsonParserV2::new(deps.parse_service.clone(), fs_adapter);
+        let json_parser = JsonParserV2::new(deps.parse_service.clone(), fs_adapter.clone());
+        
+        // Create V2 ImportResolver
+        let import_resolver = ImportResolver::new(deps.parse_service.clone(), fs_adapter);
 
         Ok(Self {
             config,
@@ -253,7 +255,6 @@ where
         config: LinkMLConfig,
         deps: LinkMLServiceDependencies<T, E, C, O, R, P>,
     ) -> Result<Self> {
-        let import_resolver = ImportResolver::new();
         let config = Arc::new(RwLock::new(config));
 
         // Create validator cache with RootReal cache service integration
@@ -264,7 +265,10 @@ where
         // Create V2 parsers
         let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
         let yaml_parser = YamlParserV2::new(fs_adapter.clone());
-        let json_parser = JsonParserV2::new(deps.parse_service.clone(), fs_adapter);
+        let json_parser = JsonParserV2::new(deps.parse_service.clone(), fs_adapter.clone());
+        
+        // Create import resolver with V2 parser dependencies
+        let import_resolver = ImportResolver::new(deps.parse_service.clone(), fs_adapter);
 
         Ok(Self {
             config,

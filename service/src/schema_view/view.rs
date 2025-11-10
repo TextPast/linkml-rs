@@ -66,9 +66,6 @@ pub struct SchemaView {
     /// Merged view of all imported schemas
     merged_schema: Arc<RwLock<SchemaDefinition>>,
 
-    /// Import resolver for handling schema imports (kept for future reference)
-    _import_resolver: Arc<ImportResolver>,
-
     /// Navigation cache for efficient lookups
     nav_cache: Arc<RwLock<NavigationCache>>,
 
@@ -83,8 +80,9 @@ impl SchemaView {
     /// # Errors
     ///
     pub fn new(schema: SchemaDefinition) -> Result<Self> {
-        let import_resolver = ImportResolver::new();
-        let merged = import_resolver.resolve_imports(&schema)?;
+        // For synchronous creation, we skip import resolution as it requires async I/O
+        // Use SchemaView::with_imports() or load via LinkMLService for full import resolution
+        let merged = schema.clone();
 
         let schema_arc = Arc::new(schema);
         let merged_arc = Arc::new(RwLock::new(merged));
@@ -92,7 +90,6 @@ impl SchemaView {
         Ok(Self {
             _schema: schema_arc,
             merged_schema: merged_arc,
-            _import_resolver: Arc::new(import_resolver),
             nav_cache: Arc::new(RwLock::new(NavigationCache::new())),
             usage_index: Arc::new(RwLock::new(None)),
         })

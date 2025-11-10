@@ -89,7 +89,7 @@ impl SchemaLoader {
         let path = path.as_ref();
 
         // Read file content using injected fs_adapter for consistency with V2 architecture
-        let content = self.fs_adapter.read_to_string(path)
+        let content = self.fs_adapter.as_ref().read_to_string(path)
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to read file: {e}")))?;
 

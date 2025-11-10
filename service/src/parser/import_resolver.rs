@@ -9,9 +9,15 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use super::{AsyncSchemaParser, JsonParserV2, YamlParserV2};
+use crate::file_system_adapter::FileSystemOperations;
+use parse_core::ParseService;
+
 /// Import resolver for handling schema imports
-#[derive(Debug)]
-pub struct ImportResolver {
+///
+/// This resolver uses V2 parsers that comply with RootReal's mandatory
+/// centralized parsing architecture.
+pub struct ImportResolver<P: ParseService, F: FileSystemOperations> {
     /// Cache of resolved schemas
     cache: Arc<RwLock<HashMap<String, SchemaDefinition>>>,
     /// Search paths for imports
@@ -22,36 +28,59 @@ pub struct ImportResolver {
     base_url: Arc<RwLock<Option<String>>>,
     /// Maximum import depth to prevent infinite recursion
     max_depth: usize,
+    /// YAML parser for .yaml/.yml files
+    yaml_parser: Arc<YamlParserV2<F>>,
+    /// JSON parser for .json files
+    json_parser: Arc<JsonParserV2<P, F>>,
 }
 
-impl Default for ImportResolver {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl ImportResolver {
-    /// Create a new import resolver
+impl<P: ParseService, F: FileSystemOperations> ImportResolver<P, F> {
+    /// Create a new import resolver with V2 parsers
+    ///
+    /// # Arguments
+    ///
+    /// * `parse_service` - ParseService for JSON parsing (centralized architecture)
+    /// * `fs_adapter` - File system adapter for sandboxed file operations
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(parse_service: Arc<P>, fs_adapter: Arc<F>) -> Self {
+        let yaml_parser = Arc::new(YamlParserV2::new(Arc::clone(&fs_adapter)));
+        let json_parser = Arc::new(JsonParserV2::new(parse_service, Arc::clone(&fs_adapter)));
+
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             search_paths: Arc::new(RwLock::new(vec![PathBuf::from(".")])),
             base_path: Arc::new(RwLock::new(None)),
             base_url: Arc::new(RwLock::new(None)),
             max_depth: 10,
+            yaml_parser,
+            json_parser,
         }
     }
 
     /// Create with specific search paths
+    ///
+    /// # Arguments
+    ///
+    /// * `search_paths` - Paths to search for import files
+    /// * `parse_service` - ParseService for JSON parsing (centralized architecture)
+    /// * `fs_adapter` - File system adapter for sandboxed file operations
     #[must_use]
-    pub fn with_search_paths(search_paths: Vec<PathBuf>) -> Self {
+    pub fn with_search_paths(
+        search_paths: Vec<PathBuf>,
+        parse_service: Arc<P>,
+        fs_adapter: Arc<F>,
+    ) -> Self {
+        let yaml_parser = Arc::new(YamlParserV2::new(Arc::clone(&fs_adapter)));
+        let json_parser = Arc::new(JsonParserV2::new(parse_service, Arc::clone(&fs_adapter)));
+
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             search_paths: Arc::new(RwLock::new(search_paths)),
             base_path: Arc::new(RwLock::new(None)),
             base_url: Arc::new(RwLock::new(None)),
             max_depth: 10,
+            yaml_parser,
+            json_parser,
         }
     }
 
@@ -186,12 +215,26 @@ impl ImportResolver {
         ))
     }
 
-    /// Load and parse a schema file
+    /// Load and parse a schema file using V2 parsers
+    ///
+    /// Detects file format from extension and uses appropriate V2 parser.
     async fn load_schema_file(&self, path: &Path) -> Result<SchemaDefinition> {
-        use super::Parser;
+        // Detect format from extension
+        let extension = path
+            .extension()
+            .and_then(|s| s.to_str())
+            .ok_or_else(|| LinkMLError::parse(format!("No file extension for: {}", path.display())))?;
 
-        let parser = Parser::new();
-        parser.parse_file(path)
+        // Use appropriate V2 parser based on extension
+        match extension {
+            "yaml" | "yml" => self.yaml_parser.parse_file(path).await,
+            "json" => self.json_parser.parse_file(path).await,
+            _ => Err(LinkMLError::parse(format!(
+                "Unsupported schema file format: {} (path: {})",
+                extension,
+                path.display()
+            ))),
+        }
     }
 
     /// Merge an imported schema into the current schema
@@ -254,7 +297,7 @@ impl ImportResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::SchemaParser;
+    use crate::file_system_adapter::TokioFileSystemAdapter;
     use std::fs;
     use tempfile::TempDir;
 
@@ -292,14 +335,19 @@ classes:
     description: Main class
 ";
 
-        // Parse main schema
-        use super::Parser;
-        let parser = Parser::new();
-        let schema = parser.parse_str(main_schema, "yaml")?;
+        // Parse main schema using V2 parser
+        let fs_adapter = Arc::new(TokioFileSystemAdapter::new());
+        let yaml_parser = YamlParserV2::new(Arc::clone(&fs_adapter));
+        let schema = yaml_parser.parse_str(main_schema).await?;
 
         // Resolve imports
-        let resolver = ImportResolver::with_search_paths(vec![base_path.to_path_buf()]);
-        let merged = resolver.resolve_imports_async(&schema)?;
+        let parse_service = Arc::new(parse_core::service::ParseServiceImpl::new());
+        let resolver = ImportResolver::with_search_paths(
+            vec![base_path.to_path_buf()],
+            parse_service,
+            fs_adapter,
+        );
+        let merged = resolver.resolve_imports_async(&schema).await?;
 
         // Check that base elements were imported
         assert!(merged.classes.contains_key("BaseClass"));
