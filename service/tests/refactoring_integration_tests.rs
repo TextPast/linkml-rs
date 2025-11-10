@@ -448,7 +448,7 @@ slots:
 "#;
 
     let schema: linkml_core::SchemaDefinition = serde_yaml::from_str(schema_yaml)?;
-    let view = SchemaView::new(schema)?;
+    let view = SchemaView::new(schema).await?;
 
     // Test get_element
     let person_element = view.get_element("Person")?;

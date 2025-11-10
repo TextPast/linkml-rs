@@ -167,7 +167,7 @@ async fn test_class_view_slot_view() {
     schema.slots.insert("breed".to_string(), breed_slot);
 
     // Create SchemaView
-    let schema_view = SchemaView::new(schema).expect("Test operation failed");
+    let schema_view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // Get ClassView for Dog
     let dog_view = schema_view

@@ -9,7 +9,7 @@ use linkml_core::types::SchemaDefinition;
 #[tokio::test]
 async fn test_schema_view_basic_caching() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Test operation failed");
+    let view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // First call - cache miss
     let start = Instant::now();
@@ -36,7 +36,7 @@ async fn test_schema_view_basic_caching() {
 #[tokio::test]
 async fn test_induced_slots_caching() {
     let schema = create_complex_schema();
-    let view = SchemaView::new(schema).expect("Test operation failed");
+    let view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // Warm up cache
     let _ = view.class_slots("Employee").expect("Test operation failed");
@@ -57,7 +57,7 @@ async fn test_induced_slots_caching() {
 async fn test_cache_invalidation_not_needed() {
     // SchemaView is immutable, so cache invalidation isn't needed
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Test operation failed");
+    let view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // Get initial results
     let classes1 = view.all_classes().expect("Test operation failed");
@@ -72,7 +72,7 @@ async fn test_cache_invalidation_not_needed() {
 async fn test_concurrent_cache_access() {
     let schema = Arc::new(create_complex_schema());
     let view = Arc::new(
-        SchemaView::new(schema.as_ref().clone())
+        SchemaView::new(schema.as_ref().await.clone())
             .await
             .expect("Test operation failed"),
     );
@@ -126,7 +126,7 @@ async fn test_concurrent_cache_access() {
 #[tokio::test]
 async fn test_navigation_cache_statistics() {
     let schema = create_complex_schema();
-    let view = SchemaView::new(schema).expect("Test operation failed");
+    let view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // Perform various operations to populate cache
     let _ = view
@@ -180,7 +180,7 @@ async fn test_complex_inheritance_caching() {
         schema.slots.insert(format!("slot{}", i), slot);
     }
 
-    let view = SchemaView::new(schema).expect("Test operation failed");
+    let view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // First access - builds cache
     let start = Instant::now();
@@ -209,7 +209,7 @@ async fn test_complex_inheritance_caching() {
 #[tokio::test]
 async fn test_usage_index_caching() {
     let schema = create_complex_schema();
-    let view = SchemaView::new(schema).expect("Test operation failed");
+    let view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // First build of usage index
     let start = Instant::now();
@@ -264,7 +264,7 @@ async fn test_mixin_resolution_caching() {
         schema.slots.insert(format!("own_slot_{}", i), slot);
     }
 
-    let view = SchemaView::new(schema).expect("Test operation failed");
+    let view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // Measure mixin resolution performance
     let start = Instant::now();
@@ -296,7 +296,7 @@ async fn test_mixin_resolution_caching() {
 // #[tokio::test]
 // async fn test_dependency_graph_caching() {
 //     let schema = create_complex_schema();
-//     let view = SchemaView::new(schema).expect("Test operation failed");
+//     let view = SchemaView::new(schema).await.expect("Test operation failed");
 //
 //     // First generation of dependency graph
 //     let start = Instant::now();
@@ -333,7 +333,7 @@ async fn test_memory_efficiency() {
         }
     }
 
-    let view = SchemaView::new(schema).expect("Test operation failed");
+    let view = SchemaView::new(schema).await.expect("Test operation failed");
 
     // Access various cached data
     let _ = view.all_classes().expect("Test operation failed");

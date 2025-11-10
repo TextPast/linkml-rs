@@ -321,7 +321,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 2. Schema Introspection"
     );
     println!("-----------------------");
-    let schema_view = SchemaView::new(schema.clone())?;
+    let schema_view = SchemaView::new(schema.clone().await)?;
 
     // Show class hierarchy
     println!("Class hierarchy:");

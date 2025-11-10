@@ -12,7 +12,7 @@ use super::analysis::UsageIndex;
 use super::class_view::ClassView;
 use super::navigation::{NavigationCache, SlotResolution};
 use super::slot_view::SlotView;
-use crate::parser::{ImportResolver, SchemaLoader};
+use crate::parser::{ImportResolver, ImportResolverV2, SchemaLoader};
 
 /// Type of schema element
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -74,15 +74,20 @@ pub struct SchemaView {
 }
 
 impl SchemaView {
-    /// Create a new `SchemaView` from a schema definition
+    /// Create a new `SchemaView` from a schema definition with full import resolution
+    ///
+    /// This async constructor properly resolves all schema imports using `ImportResolverV2`.
+    /// Import resolution is a core LinkML feature and MUST NOT be skipped.
+    ///
     /// Returns an error if the operation fails
     ///
     /// # Errors
     ///
-    pub fn new(schema: SchemaDefinition) -> Result<Self> {
-        // For synchronous creation, we skip import resolution as it requires async I/O
-        // Use SchemaView::with_imports() or load via LinkMLService for full import resolution
-        let merged = schema.clone();
+    pub async fn new(schema: SchemaDefinition) -> Result<Self> {
+        // CRITICAL: Import resolution is MANDATORY in LinkML - schemas often depend on imported definitions
+        // We use ImportResolverV2 which has built-in HTTP client for production-ready import handling
+        let resolver = ImportResolverV2::new();
+        let merged = resolver.resolve_imports(&schema).await?;
 
         let schema_arc = Arc::new(schema);
         let merged_arc = Arc::new(RwLock::new(merged));

@@ -418,7 +418,7 @@ async fn test_large_schema_loading_performance() {
 
     // Create SchemaView and measure introspection
     let view_start = Instant::now();
-    let view = SchemaView::new(schema.clone());
+    let view = SchemaView::new(schema.clone().await);
     let stats = view.get_statistics();
     let view_time = view_start.elapsed();
 
@@ -534,7 +534,7 @@ async fn test_concurrent_schema_operations() {
                     }
                     1 => {
                         // SchemaView operations
-                        let view = SchemaView::new((*schema_clone).clone());
+                        let view = SchemaView::new((*schema_clone).await.clone());
                         let _ = view
                             .class_slots("Customer", true)
                             .expect("Test operation failed");

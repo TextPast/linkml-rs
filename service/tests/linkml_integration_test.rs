@@ -897,7 +897,7 @@ async fn test_schema_view_introspection() {
         ?;
 
     // Create SchemaView for introspection
-    let view = SchemaView::new(schema.clone())?
+    let view = SchemaView::new(schema.clone().await)?
 
     // Test class hierarchy
     let patient_ancestors = view.class_ancestors("Patient")?
@@ -1396,7 +1396,7 @@ async fn test_end_to_end_clinical_trial_system() {
     */
 
     // Create SchemaView for analysis
-    let view = SchemaView::new(schema)?;
+    let view = SchemaView::new(schema).await?;
     // TODO: get_statistics() not implemented yet
     let classes = view.all_classes()?;
 
@@ -1582,7 +1582,7 @@ enums:
     let schema = service
         .load_schema_str(schema_str, SchemaFormat::Yaml)
         .await?;
-    let view = SchemaView::new(schema.clone())?;
+    let view = SchemaView::new(schema.clone().await)?;
 
     // Test inheritance chain
     let doc_slots = view.class_slots("Document")?;

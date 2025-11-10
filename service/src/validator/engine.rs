@@ -360,7 +360,7 @@ impl ValidationEngine {
     ) -> Result<()> {
         let data = self.apply_defaults_and_prepare(data, context, report);
 
-        self.setup_schema_analysis(class_name)?;
+        self.setup_schema_analysis(class_name).await?;
         self.check_recursion_constraints(&data, class_name, class_def, context, report);
 
         if self.handle_recursion_guard(&data, class_name, class_def, context, report) {
@@ -882,9 +882,9 @@ impl ValidationEngine {
     }
 
     /// Setup schema analysis components
-    fn setup_schema_analysis(&self, class_name: &str) -> Result<()> {
+    async fn setup_schema_analysis(&self, class_name: &str) -> Result<()> {
         // Use SchemaView for comprehensive class analysis
-        let schema_view = SchemaView::new(self.schema.as_ref().clone())?;
+        let schema_view = SchemaView::new(self.schema.as_ref().clone()).await?;
         let _class_view = schema_view.class_view(class_name)?;
 
         // Use InheritanceResolver for complete slot resolution

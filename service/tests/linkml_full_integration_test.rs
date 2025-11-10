@@ -673,7 +673,7 @@ async fn test_schema_view_introspection() {
         .expect("Test operation failed");
 
     // Create SchemaView for introspection
-    let view = SchemaView::new(schema.clone());
+    let view = SchemaView::new(schema.clone().await);
 
     // Test class hierarchy
     let patient_ancestors = view.class_ancestors("Patient");
@@ -992,7 +992,7 @@ enums:
         .resolve(&mut schema)
         .expect("Test operation failed");
 
-    let view = SchemaView::new(schema.clone());
+    let view = SchemaView::new(schema.clone().await);
 
     // Test inheritance chain
     let doc_slots = view

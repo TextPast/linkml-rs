@@ -528,9 +528,9 @@ async fn test_schema_view_with_file_schemas() {
         .expect("Test operation failed");
 
     // Create SchemaViews
-    let biolink_view = SchemaView::new(biolink);
-    let fhir_view = SchemaView::new(fhir);
-    let api_view = SchemaView::new(api);
+    let biolink_view = SchemaView::new(biolink).await;
+    let fhir_view = SchemaView::new(fhir).await;
+    let api_view = SchemaView::new(api).await;
 
     // Compare schema statistics
     println!("

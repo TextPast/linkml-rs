@@ -72,7 +72,7 @@ fn create_test_schema() -> SchemaDefinition {
 #[test]
 fn test_schema_view_creation() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
 
     // Test that we can access classes
     let classes = view.all_classes().expect("Failed to get classes");
@@ -84,7 +84,7 @@ fn test_schema_view_creation() {
 #[test]
 fn test_class_inheritance() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
 
     // Test ancestors
     let ancestors = view
@@ -103,7 +103,7 @@ fn test_class_inheritance() {
 #[test]
 fn test_induced_class() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
 
     // Get induced class - should include inherited slots
     let induced = view
@@ -119,7 +119,7 @@ fn test_induced_class() {
 #[test]
 fn test_class_with_mixins() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
 
     // Get induced class with mixins
     let induced = view
@@ -136,7 +136,7 @@ fn test_class_with_mixins() {
 #[test]
 fn test_identifier_slot() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
 
     // Test getting identifier slot
     let id_slot = view
@@ -154,7 +154,7 @@ fn test_identifier_slot() {
 #[test]
 fn test_is_inlined() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
 
     // Classes with identifiers should not be inlined
     let base_inlined = view
@@ -172,7 +172,7 @@ fn test_is_inlined() {
 #[test]
 fn test_class_navigator() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
     let navigator = ClassNavigator::new(&view);
 
     // Test root classes
@@ -201,7 +201,7 @@ fn test_class_navigator() {
 #[test]
 fn test_schema_analyzer() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
     let analyzer = SchemaAnalyzer::new(&view);
 
     // Test statistics
@@ -227,7 +227,7 @@ fn test_schema_analyzer() {
 #[test]
 fn test_usage_index() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
 
     // Build usage index
     let usage_index = view.usage_index().expect("Failed to build usage index");
@@ -258,7 +258,7 @@ fn test_usage_index() {
 #[test]
 fn test_schema_view_caching() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).expect("Failed to create SchemaView");
+    let view = SchemaView::new(schema).await.expect("Failed to create SchemaView");
 
     // First call should compute
     let induced1 = view

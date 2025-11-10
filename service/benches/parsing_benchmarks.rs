@@ -331,12 +331,15 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
         "Failed to parse large schema for inheritance resolution",
     );
 
+    // Create a Tokio runtime for async operations
+    let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+
     let mut group = c.benchmark_group("inheritance_resolution");
 
     group.bench_function("small", |b| {
         b.iter(|| {
             let view = require_ok(
-                SchemaView::new(small_schema.clone()),
+                rt.block_on(SchemaView::new(small_schema.clone())),
                 "SchemaView creation should succeed",
             );
             black_box(view.schema_name().ok());
@@ -346,7 +349,7 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
     group.bench_function("medium", |b| {
         b.iter(|| {
             let view = require_ok(
-                SchemaView::new(medium_schema.clone()),
+                rt.block_on(SchemaView::new(medium_schema.clone())),
                 "SchemaView creation should succeed",
             );
             black_box(view.schema_name().ok());
@@ -356,7 +359,7 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
     group.bench_function("large", |b| {
         b.iter(|| {
             let view = require_ok(
-                SchemaView::new(large_schema.clone()),
+                rt.block_on(SchemaView::new(large_schema.clone())),
                 "SchemaView creation should succeed",
             );
             black_box(view.schema_name().ok());
@@ -377,12 +380,15 @@ fn bench_schema_view_operations(c: &mut Criterion) {
         "Failed to parse large schema for schema view benchmarks",
     );
 
+    // Create a Tokio runtime for async operations
+    let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+
     let medium_view = require_ok(
-        SchemaView::new(medium_schema.clone()),
+        rt.block_on(SchemaView::new(medium_schema.clone())),
         "Failed to construct SchemaView for medium schema",
     );
     let large_view = require_ok(
-        SchemaView::new(large_schema.clone()),
+        rt.block_on(SchemaView::new(large_schema.clone())),
         "Failed to construct SchemaView for large schema",
     );
 

@@ -33,7 +33,7 @@ async fn test_full_integration_pipeline() {
     let mut schema = create_comprehensive_schema();
 
     // Step 2: Use SchemaView with ClassView and SlotView
-    let schema_view = SchemaView::new(schema.clone()).expect("Test operation failed");
+    let schema_view = SchemaView::new(schema.clone().await).expect("Test operation failed");
 
     // Test ClassView integration
     let person_view = schema_view

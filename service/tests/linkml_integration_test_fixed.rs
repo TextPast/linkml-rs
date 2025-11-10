@@ -203,7 +203,7 @@ async fn test_biomedical_research_workflow() {
     assert!(code.contains("class Participant"));
 
     // Create SchemaView for introspection
-    let view = SchemaView::new(&schema);
+    let view = SchemaView::new(&schema).await;
     let study_class = view.get_class("Study").expect("LinkML operation in test should succeed");
     assert_eq!(study_class.name, "Study");
 

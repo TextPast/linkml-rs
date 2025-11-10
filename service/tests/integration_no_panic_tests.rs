@@ -180,7 +180,7 @@ slots:
     };
 
     // Step 2: Create SchemaView
-    let schema_view = SchemaView::new(schema.clone()).expect("create schema view");
+    let schema_view = SchemaView::new(schema.clone().await).await.expect("create schema view");
 
     // Test various SchemaView operations (ignore results for panic test)
     let _ = schema_view.all_classes();
@@ -486,7 +486,7 @@ slots:
             }
 
             // Create schema view
-            let view = SchemaView::new(schema_clone);
+            let view = SchemaView::new(schema_clone).await;
             let _ = view.all_classes();
             let _ = view.all_slots();
         });

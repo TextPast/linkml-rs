@@ -206,7 +206,7 @@ fn test_schema_view_handles_missing_elements() {
 
     schema.classes.insert("Child".to_string(), class);
 
-    let view = SchemaView::new(schema);
+    let view = SchemaView::new(schema).await;
 
     // Should handle missing parent gracefully
     let parents = view.class_parents("Child");
@@ -357,7 +357,7 @@ use linkml_core::error::LinkMLError;
                 }
                 _ => {
                     // Schema view operations
-                    let view = SchemaView::new(schema_clone);
+                    let view = SchemaView::new(schema_clone).await;
                     let _ = view.all_classes();
                     let _ = view.all_slots();
                 }
