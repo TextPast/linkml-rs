@@ -189,20 +189,24 @@ fn bench_single_validation(c: &mut Criterion) {
     let mut group = c.benchmark_group("single_validation");
 
     group.bench_function("simple_schema", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = simple_engine
-                .validate_as_class(black_box(&simple_data), "Person", None)
-                .await;
-            black_box(result)
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = simple_engine
+                    .validate_as_class(black_box(&simple_data), "Person", None)
+                    .await;
+                black_box(result)
+            })
         })
     });
 
     group.bench_function("complex_schema", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = complex_engine
-                .validate_as_class(black_box(&complex_data), "Employee", None)
-                .await;
-            black_box(result)
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = complex_engine
+                    .validate_as_class(black_box(&complex_data), "Employee", None)
+                    .await;
+                black_box(result)
+            })
         })
     });
 
@@ -233,15 +237,17 @@ fn bench_batch_validation(c: &mut Criterion) {
             BenchmarkId::new("simple_schema", size),
             &size,
             |b, &_size| {
-                b.to_async(&runtime).iter(|| async {
-                    let mut results = Vec::new();
-                    for item in &simple_data {
-                        let result = simple_engine
-                            .validate_as_class(black_box(item), "Person", None)
-                            .await;
-                        results.push(result);
-                    }
-                    black_box(results)
+                b.iter(|| {
+                    runtime.block_on(async {
+                        let mut results = Vec::new();
+                        for item in &simple_data {
+                            let result = simple_engine
+                                .validate_as_class(black_box(item), "Person", None)
+                                .await;
+                            results.push(result);
+                        }
+                        black_box(results)
+                    })
                 })
             },
         );
@@ -250,15 +256,17 @@ fn bench_batch_validation(c: &mut Criterion) {
             BenchmarkId::new("complex_schema", size),
             &size,
             |b, &_size| {
-                b.to_async(&runtime).iter(|| async {
-                    let mut results = Vec::new();
-                    for item in &complex_data {
-                        let result = complex_engine
-                            .validate_as_class(black_box(item), "Employee", None)
-                            .await;
-                        results.push(result);
-                    }
-                    black_box(results)
+                b.iter(|| {
+                    runtime.block_on(async {
+                        let mut results = Vec::new();
+                        for item in &complex_data {
+                            let result = complex_engine
+                                .validate_as_class(black_box(item), "Employee", None)
+                                .await;
+                            results.push(result);
+                        }
+                        black_box(results)
+                    })
                 })
             },
         );
@@ -288,16 +296,16 @@ fn bench_collection_validation(c: &mut Criterion) {
             BenchmarkId::new("simple_schema", size),
             &size,
             |b, &_size| {
-                b.to_async(&runtime).iter(|| {
+                b.iter(|| {
                     let simple_schema = simple_schema.clone();
                     let simple_data = simple_data.clone();
-                    async move {
+                    runtime.block_on(async move {
                         let mut simple_engine = ValidationEngine::new(&simple_schema).unwrap();
                         let result = simple_engine
                             .validate_collection(black_box(&simple_data), "Person", None)
                             .await;
                         black_box(result)
-                    }
+                    })
                 })
             },
         );
@@ -306,10 +314,10 @@ fn bench_collection_validation(c: &mut Criterion) {
             BenchmarkId::new("complex_schema", size),
             &size,
             |b, &_size| {
-                b.to_async(&runtime).iter(|| {
+                b.iter(|| {
                     let complex_schema = complex_schema.clone();
                     let complex_data = complex_data.clone();
-                    async move {
+                    runtime.block_on(async move {
                         let mut complex_engine = ValidationEngine::new(&complex_schema).unwrap();
                         let result = complex_engine
                             .validate_collection(black_box(&complex_data), "Employee", None)
@@ -348,20 +356,24 @@ fn bench_cached_validation(c: &mut Criterion) {
     let mut group = c.benchmark_group("cached_validation");
 
     group.bench_function("no_cache", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = engine_no_cache
-                .validate_as_class(black_box(&test_data), "Employee", None)
-                .await;
-            black_box(result)
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = engine_no_cache
+                    .validate_as_class(black_box(&test_data), "Employee", None)
+                    .await;
+                black_box(result)
+            })
         })
     });
 
     group.bench_function("with_cache_cold", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = engine_with_cache
-                .validate_as_class(black_box(&test_data), "Employee", None)
-                .await;
-            black_box(result)
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = engine_with_cache
+                    .validate_as_class(black_box(&test_data), "Employee", None)
+                    .await;
+                black_box(result)
+            })
         })
     });
 
@@ -373,11 +385,13 @@ fn bench_cached_validation(c: &mut Criterion) {
     });
 
     group.bench_function("with_cache_warm", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = engine_with_cache
-                .validate_as_class(black_box(&test_data), "Employee", None)
-                .await;
-            black_box(result)
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = engine_with_cache
+                    .validate_as_class(black_box(&test_data), "Employee", None)
+                    .await;
+                black_box(result)
+            })
         })
     });
 
@@ -406,11 +420,13 @@ fn bench_validation_options(c: &mut Criterion) {
 
     // Default options
     group.bench_function("default_options", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = engine
-                .validate_as_class(black_box(&test_data), "Employee", None)
-                .await;
-            black_box(result)
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = engine
+                    .validate_as_class(black_box(&test_data), "Employee", None)
+                    .await;
+                black_box(result)
+            })
         })
     });
 
@@ -421,15 +437,17 @@ fn bench_validation_options(c: &mut Criterion) {
     };
 
     group.bench_function("fail_fast", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = engine
-                .validate_as_class(
-                    black_box(&test_data),
-                    "Employee",
-                    Some(fail_fast_options.clone()),
-                )
-                .await;
-            black_box(result)
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = engine
+                    .validate_as_class(
+                        black_box(&test_data),
+                        "Employee",
+                        Some(fail_fast_options.clone()),
+                    )
+                    .await;
+                black_box(result)
+            })
         })
     });
 
@@ -440,13 +458,14 @@ fn bench_validation_options(c: &mut Criterion) {
     };
 
     group.bench_function("no_permissibles", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = engine
-                .validate_as_class(
-                    black_box(&test_data),
-                    "Employee",
-                    Some(no_permissible_options.clone()),
-                )
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = engine
+                    .validate_as_class(
+                        black_box(&test_data),
+                        "Employee",
+                        Some(no_permissible_options.clone()),
+                    )
                 .await;
             black_box(result)
         })
@@ -537,11 +556,13 @@ fn bench_pattern_validation(c: &mut Criterion) {
     let mut group = c.benchmark_group("pattern_validation");
 
     group.bench_function("all_patterns", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let result = engine
-                .validate_as_class(black_box(&test_data), "PatternTest", None)
-                .await;
-            black_box(result)
+        b.iter(|| {
+            runtime.block_on(async {
+                let result = engine
+                    .validate_as_class(black_box(&test_data), "PatternTest", None)
+                    .await;
+                black_box(result)
+            })
         })
     });
 
@@ -578,11 +599,13 @@ fn bench_memory_usage(c: &mut Criterion) {
             BenchmarkId::new("large_data", format!("{}KB", size)),
             &size,
             |b, &_size| {
-                b.to_async(&runtime).iter(|| async {
-                    let result = engine
-                        .validate_as_class(black_box(&test_data), "Employee", None)
-                        .await;
-                    black_box(result)
+                b.iter(|| {
+                    runtime.block_on(async {
+                        let result = engine
+                            .validate_as_class(black_box(&test_data), "Employee", None)
+                            .await;
+                        black_box(result)
+                    })
                 })
             },
         );

@@ -63,10 +63,12 @@ fn bench_excel_small(c: &mut Criterion) {
     let path = temp_file.path().to_path_buf();
 
     c.bench_function("excel_introspect_10_rows", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let (logger, timestamp) = create_test_services();
-            let introspector = ExcelIntrospector::new(logger, timestamp);
-            let _ = black_box(introspector.analyze_file(&path).await.unwrap());
+        b.iter(|| {
+            runtime.block_on(async {
+                let (logger, timestamp) = create_test_services();
+                let introspector = ExcelIntrospector::new(logger, timestamp);
+                let _ = black_box(introspector.analyze_file(&path).await.unwrap());
+            })
         });
     });
 }
@@ -79,10 +81,12 @@ fn bench_excel_medium(c: &mut Criterion) {
     let path = temp_file.path().to_path_buf();
 
     c.bench_function("excel_introspect_100_rows", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let (logger, timestamp) = create_test_services();
-            let introspector = ExcelIntrospector::new(logger, timestamp);
-            let _ = black_box(introspector.analyze_file(&path).await.unwrap());
+        b.iter(|| {
+            runtime.block_on(async {
+                let (logger, timestamp) = create_test_services();
+                let introspector = ExcelIntrospector::new(logger, timestamp);
+                let _ = black_box(introspector.analyze_file(&path).await.unwrap());
+            })
         });
     });
 }
@@ -95,10 +99,12 @@ fn bench_excel_large(c: &mut Criterion) {
     let path = temp_file.path().to_path_buf();
 
     c.bench_function("excel_introspect_1000_rows", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let (logger, timestamp) = create_test_services();
-            let introspector = ExcelIntrospector::new(logger, timestamp);
-            let _ = black_box(introspector.analyze_file(&path).await.unwrap());
+        b.iter(|| {
+            runtime.block_on(async {
+                let (logger, timestamp) = create_test_services();
+                let introspector = ExcelIntrospector::new(logger, timestamp);
+                let _ = black_box(introspector.analyze_file(&path).await.unwrap());
+            })
         });
     });
 }
@@ -115,15 +121,17 @@ fn bench_excel_schema_generation(c: &mut Criterion) {
     let stats = runtime.block_on(async { introspector.analyze_file(&path).await.unwrap() });
 
     c.bench_function("excel_schema_generation_100_rows", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let (logger, timestamp) = create_test_services();
-            let introspector = ExcelIntrospector::new(logger, timestamp);
-            let _ = black_box(
-                introspector
-                    .generate_schema(&stats, "test_schema")
-                    .await
-                    .unwrap(),
-            );
+        b.iter(|| {
+            runtime.block_on(async {
+                let (logger, timestamp) = create_test_services();
+                let introspector = ExcelIntrospector::new(logger, timestamp);
+                let _ = black_box(
+                    introspector
+                        .generate_schema(&stats, "test_schema")
+                        .await
+                        .unwrap(),
+                );
+            })
         });
     });
 }
