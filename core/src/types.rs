@@ -485,12 +485,12 @@ pub struct SlotDefinition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub range_type: Option<String>,
 
-    /// Range properties (e.g., ["id"] for instance ID field)
+    /// Range properties (e.g., `["id"]` for instance ID field)
     /// RootReal/Textpast extension for specifying which instance field to use
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub range_properties: Vec<String>,
 
-    /// Imports for scoped slot import resolution (used in slot_usage context)
+    /// Imports for scoped slot import resolution (used in `slot_usage` context)
     /// RootReal/Textpast extension for disambiguating range types when multiple imports define same class name
     /// When specified, only search these imports for the range type. When empty, search all schema imports.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

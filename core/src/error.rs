@@ -261,18 +261,17 @@ where
         // Extract location information from Pest error
         let location = match err.line_col {
             pest::error::LineColLocation::Pos((line, col)) => {
-                Some(format!("line {}, column {}", line, col))
+                Some(format!("line {line}, column {col}"))
             }
             pest::error::LineColLocation::Span((start_line, start_col), (end_line, end_col)) => {
                 Some(format!(
-                    "line {} column {} to line {} column {}",
-                    start_line, start_col, end_line, end_col
+                    "line {start_line} column {start_col} to line {end_line} column {end_col}"
                 ))
             }
         };
 
         Self::ParseError {
-            message: format!("Pest parsing error: {}", err),
+            message: format!("Pest parsing error: {err}"),
             location,
         }
     }

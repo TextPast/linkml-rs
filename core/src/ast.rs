@@ -22,7 +22,7 @@ pub struct Span {
 
 impl Span {
     /// Create a new span
-    pub fn new(start: usize, end: usize, line: usize, column: usize) -> Self {
+    #[must_use] pub fn new(start: usize, end: usize, line: usize, column: usize) -> Self {
         Self {
             start,
             end,
@@ -32,7 +32,7 @@ impl Span {
     }
 
     /// Create a span that encompasses both spans
-    pub fn merge(&self, other: &Span) -> Span {
+    #[must_use] pub fn merge(&self, other: &Span) -> Span {
         Span {
             start: self.start.min(other.start),
             end: self.end.max(other.end),
@@ -67,7 +67,7 @@ pub enum DocumentType {
     Instance,
 }
 
-/// Type alias for LinkML document (schema or instance)
+/// Type alias for `LinkML` document (schema or instance)
 pub type LinkMLDocument = SchemaAst;
 
 /// Root schema AST node
@@ -147,7 +147,7 @@ pub struct ClassAst {
     pub name: String,
     /// Description
     pub description: Option<Spanned<Description>>,
-    /// Parent class (is_a)
+    /// Parent class (`is_a`)
     pub is_a: Option<Spanned<String>>,
     /// Abstract class flag
     pub abstract_: Option<Spanned<bool>>,
@@ -226,7 +226,7 @@ pub struct SlotAst {
     pub minimum_cardinality: Option<Spanned<i64>>,
     /// Maximum cardinality
     pub maximum_cardinality: Option<Spanned<i64>>,
-    /// Parent slot (is_a)
+    /// Parent slot (`is_a`)
     pub is_a: Option<Spanned<String>>,
     /// Mixins
     pub mixins: Vec<Spanned<String>>,
@@ -276,7 +276,7 @@ pub enum RangeType {
 /// Structured pattern for identifier validation
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StructuredPatternAst {
-    /// Pattern syntax (e.g., "{prefix}:{local_id}")
+    /// Pattern syntax (e.g., "{`prefix}:{local_id`}")
     pub syntax: String,
     /// Whether pattern uses interpolation
     pub interpolated: bool,
@@ -432,11 +432,15 @@ pub enum ValueAst {
 
 impl SchemaAst {
     /// Create a new empty schema AST
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self::default()
     }
 
     /// Validate that required fields are present
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the schema is missing required `id` or `name` fields.
     pub fn validate_required_fields(&self) -> Result<(), String> {
         if self.id.is_none() {
             return Err("Schema 'id' field is required".to_string());

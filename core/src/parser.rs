@@ -11,10 +11,10 @@ use indexmap::IndexMap;
 use pest::Parser;
 use pest_derive::Parser;
 
-use crate::ast::*;
+use crate::ast::{SchemaAst, DocumentType, Spanned, Span, Description, ClassAst, SlotAst, TypeAst, EnumAst, PermissibleValueAst, SubsetAst, ContributorAst, AnnotationsAst, AnnotationValueAst};
 use crate::error::{LinkMLError, Result};
 
-/// Pest parser for LinkML YAML syntax
+/// Pest parser for `LinkML` YAML syntax
 #[allow(missing_docs)]
 #[derive(Parser)]
 #[grammar = "../../grammar/linkml.pest"]
@@ -24,7 +24,7 @@ pub struct LinkMLParser;
 type Pair<'i> = pest::iterators::Pair<'i, Rule>;
 
 impl LinkMLParser {
-    /// Parse a complete LinkML schema from YAML string
+    /// Parse a complete `LinkML` schema from YAML string
     ///
     /// # Arguments
     ///
@@ -36,7 +36,7 @@ impl LinkMLParser {
     ///
     /// # Errors
     ///
-    /// Returns `LinkMLError::ParseError` if the input is not valid LinkML YAML.
+    /// Returns `LinkMLError::ParseError` if the input is not valid `LinkML` YAML.
     pub fn parse_schema(input: &str) -> Result<SchemaAst> {
         let pairs = Self::parse(Rule::schema, input)?;
 
@@ -179,13 +179,13 @@ impl LinkMLParser {
                 }
             }
             Rule::schema_prefixes => {
-                schema.prefixes = Self::parse_prefixes(pair)?;
+                schema.prefixes = Self::parse_prefixes(pair);
             }
             Rule::schema_imports => {
-                schema.imports = Self::parse_imports(pair)?;
+                schema.imports = Self::parse_imports(pair);
             }
             Rule::schema_settings => {
-                schema.settings = Self::parse_settings(pair)?;
+                schema.settings = Self::parse_settings(pair);
             }
             Rule::schema_classes => {
                 schema.classes = Self::parse_classes(pair)?;
@@ -200,19 +200,19 @@ impl LinkMLParser {
                 schema.enums = Self::parse_enums(pair)?;
             }
             Rule::schema_subsets => {
-                schema.subsets = Self::parse_subsets(pair)?;
+                schema.subsets = Self::parse_subsets(pair);
             }
             Rule::schema_contributors => {
-                schema.contributors = Self::parse_contributors(pair)?;
+                schema.contributors = Self::parse_contributors(pair);
             }
             Rule::schema_categories => {
-                schema.categories = Self::parse_string_list(pair)?;
+                schema.categories = Self::parse_string_list(pair);
             }
             Rule::schema_keywords => {
-                schema.keywords = Self::parse_string_list(pair)?;
+                schema.keywords = Self::parse_string_list(pair);
             }
             Rule::schema_see_also => {
-                schema.see_also = Self::parse_string_list(pair)?;
+                schema.see_also = Self::parse_string_list(pair);
             }
             Rule::schema_annotations => {
                 // Process annotation entries directly from schema_annotations
@@ -244,25 +244,24 @@ impl LinkMLParser {
     }
 
     /// Parse prefixes section
-    fn parse_prefixes(pair: Pair<'_>) -> Result<IndexMap<String, Spanned<String>>> {
+    fn parse_prefixes(pair: Pair<'_>) -> IndexMap<String, Spanned<String>> {
         let mut prefixes = IndexMap::new();
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::prefix_entry {
                 let mut parts = inner.into_inner();
-                if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
-                    if key.as_rule() == Rule::identifier && value.as_rule() == Rule::uri {
+                if let (Some(key), Some(value)) = (parts.next(), parts.next())
+                    && key.as_rule() == Rule::identifier && value.as_rule() == Rule::uri {
                         let key_str = key.as_str().to_string();
                         let value_spanned = Self::create_spanned(&value, value.as_str().to_string());
                         prefixes.insert(key_str, value_spanned);
                     }
-                }
             }
         }
-        Ok(prefixes)
+        prefixes
     }
 
     /// Parse imports section
-    fn parse_imports(pair: Pair<'_>) -> Result<Vec<Spanned<String>>> {
+    fn parse_imports(pair: Pair<'_>) -> Vec<Spanned<String>> {
         let mut imports = Vec::new();
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::import_entry {
@@ -273,17 +272,17 @@ impl LinkMLParser {
                 }
             }
         }
-        Ok(imports)
+        imports
     }
 
     /// Parse settings section
-    fn parse_settings(pair: Pair<'_>) -> Result<IndexMap<String, Spanned<String>>> {
+    fn parse_settings(pair: Pair<'_>) -> IndexMap<String, Spanned<String>> {
         let mut settings = IndexMap::new();
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::setting_entry {
                 let mut parts = inner.into_inner();
-                if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
-                    if key.as_rule() == Rule::identifier {
+                if let (Some(key), Some(value)) = (parts.next(), parts.next())
+                    && key.as_rule() == Rule::identifier {
                         let key_str = key.as_str().to_string();
                         let value_str = match value.as_rule() {
                             Rule::pattern_value | Rule::string_value => {
@@ -293,10 +292,9 @@ impl LinkMLParser {
                         };
                         settings.insert(key_str, Self::create_spanned(&value, value_str));
                     }
-                }
             }
         }
-        Ok(settings)
+        settings
     }
 
     /// Parse classes section
@@ -305,8 +303,8 @@ impl LinkMLParser {
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::class_definition {
                 let mut parts = inner.into_inner();
-                if let Some(name_pair) = parts.next() {
-                    if name_pair.as_rule() == Rule::identifier {
+                if let Some(name_pair) = parts.next()
+                    && name_pair.as_rule() == Rule::identifier {
                         let name = name_pair.as_str().to_string();
                         let mut class_ast = ClassAst {
                             name: name.clone(),
@@ -320,7 +318,6 @@ impl LinkMLParser {
 
                         classes.insert(name, Self::create_spanned(&name_pair, class_ast));
                     }
-                }
             }
         }
         Ok(classes)
@@ -376,37 +373,37 @@ impl LinkMLParser {
                 }
             }
             Rule::class_mixins => {
-                class.mixins = Self::parse_string_list(pair)?;
+                class.mixins = Self::parse_string_list(pair);
             }
             Rule::class_slots => {
-                class.slots = Self::parse_string_list(pair)?;
+                class.slots = Self::parse_string_list(pair);
             }
             Rule::class_aliases => {
-                class.aliases = Self::parse_string_list(pair)?;
+                class.aliases = Self::parse_string_list(pair);
             }
             Rule::class_see_also => {
-                class.see_also = Self::parse_string_list(pair)?;
+                class.see_also = Self::parse_string_list(pair);
             }
             Rule::class_id_prefixes => {
-                class.id_prefixes = Self::parse_string_list(pair)?;
+                class.id_prefixes = Self::parse_string_list(pair);
             }
             Rule::class_broad_mappings => {
-                class.broad_mappings = Self::parse_string_list(pair)?;
+                class.broad_mappings = Self::parse_string_list(pair);
             }
             Rule::class_exact_mappings => {
-                class.exact_mappings = Self::parse_string_list(pair)?;
+                class.exact_mappings = Self::parse_string_list(pair);
             }
             Rule::class_narrow_mappings => {
-                class.narrow_mappings = Self::parse_string_list(pair)?;
+                class.narrow_mappings = Self::parse_string_list(pair);
             }
             Rule::class_related_mappings => {
-                class.related_mappings = Self::parse_string_list(pair)?;
+                class.related_mappings = Self::parse_string_list(pair);
             }
             Rule::class_close_mappings => {
-                class.close_mappings = Self::parse_string_list(pair)?;
+                class.close_mappings = Self::parse_string_list(pair);
             }
             Rule::class_subclass_of => {
-                class.subclass_of = Self::parse_string_list(pair)?;
+                class.subclass_of = Self::parse_string_list(pair);
             }
             _ => {
                 // Ignore unknown fields
@@ -421,8 +418,8 @@ impl LinkMLParser {
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::slot_definition {
                 let mut parts = inner.into_inner();
-                if let Some(name_pair) = parts.next() {
-                    if name_pair.as_rule() == Rule::identifier {
+                if let Some(name_pair) = parts.next()
+                    && name_pair.as_rule() == Rule::identifier {
                         let name = name_pair.as_str().to_string();
                         let mut slot_ast = SlotAst {
                             name: name.clone(),
@@ -436,7 +433,6 @@ impl LinkMLParser {
 
                         slots.insert(name, Self::create_spanned(&name_pair, slot_ast));
                     }
-                }
             }
         }
         Ok(slots)
@@ -521,13 +517,13 @@ impl LinkMLParser {
                 }
             }
             Rule::slot_mixins => {
-                slot.mixins = Self::parse_string_list(pair)?;
+                slot.mixins = Self::parse_string_list(pair);
             }
             Rule::slot_aliases => {
-                slot.aliases = Self::parse_string_list(pair)?;
+                slot.aliases = Self::parse_string_list(pair);
             }
             Rule::slot_see_also => {
-                slot.see_also = Self::parse_string_list(pair)?;
+                slot.see_also = Self::parse_string_list(pair);
             }
             _ => {
                 // Ignore unknown fields
@@ -542,8 +538,8 @@ impl LinkMLParser {
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::type_definition {
                 let mut parts = inner.into_inner();
-                if let Some(name_pair) = parts.next() {
-                    if name_pair.as_rule() == Rule::identifier {
+                if let Some(name_pair) = parts.next()
+                    && name_pair.as_rule() == Rule::identifier {
                         let name = name_pair.as_str().to_string();
                         let mut type_ast = TypeAst {
                             name: name.clone(),
@@ -557,7 +553,6 @@ impl LinkMLParser {
 
                         types.insert(name, Self::create_spanned(&name_pair, type_ast));
                     }
-                }
             }
         }
         Ok(types)
@@ -615,8 +610,8 @@ impl LinkMLParser {
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::enum_definition {
                 let mut parts = inner.into_inner();
-                if let Some(name_pair) = parts.next() {
-                    if name_pair.as_rule() == Rule::identifier {
+                if let Some(name_pair) = parts.next()
+                    && name_pair.as_rule() == Rule::identifier {
                         let name = name_pair.as_str().to_string();
                         let mut enum_ast = EnumAst {
                             name: name.clone(),
@@ -630,7 +625,6 @@ impl LinkMLParser {
 
                         enums.insert(name, Self::create_spanned(&name_pair, enum_ast));
                     }
-                }
             }
         }
         Ok(enums)
@@ -648,7 +642,7 @@ impl LinkMLParser {
                 }
             }
             Rule::enum_permissible_values => {
-                enum_ast.permissible_values = Self::parse_permissible_values(pair)?;
+                enum_ast.permissible_values = Self::parse_permissible_values(pair);
             }
             _ => {
                 // Ignore unknown fields
@@ -658,13 +652,13 @@ impl LinkMLParser {
     }
 
     /// Parse permissible values
-    fn parse_permissible_values(pair: Pair<'_>) -> Result<IndexMap<String, Spanned<PermissibleValueAst>>> {
+    fn parse_permissible_values(pair: Pair<'_>) -> IndexMap<String, Spanned<PermissibleValueAst>> {
         let mut values = IndexMap::new();
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::permissible_value_entry {
                 let mut parts = inner.into_inner();
-                if let Some(name_pair) = parts.next() {
-                    if name_pair.as_rule() == Rule::identifier {
+                if let Some(name_pair) = parts.next()
+                    && name_pair.as_rule() == Rule::identifier {
                         let name = name_pair.as_str().to_string();
                         let pv = PermissibleValueAst {
                             name: name.clone(),
@@ -672,20 +666,19 @@ impl LinkMLParser {
                         };
                         values.insert(name, Self::create_spanned(&name_pair, pv));
                     }
-                }
             }
         }
-        Ok(values)
+        values
     }
 
     /// Parse subsets section
-    fn parse_subsets(pair: Pair<'_>) -> Result<IndexMap<String, Spanned<SubsetAst>>> {
+    fn parse_subsets(pair: Pair<'_>) -> IndexMap<String, Spanned<SubsetAst>> {
         let mut subsets = IndexMap::new();
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::subset_definition {
                 let mut parts = inner.into_inner();
-                if let Some(name_pair) = parts.next() {
-                    if name_pair.as_rule() == Rule::identifier {
+                if let Some(name_pair) = parts.next()
+                    && name_pair.as_rule() == Rule::identifier {
                         let name = name_pair.as_str().to_string();
                         let subset = SubsetAst {
                             name: name.clone(),
@@ -693,14 +686,13 @@ impl LinkMLParser {
                         };
                         subsets.insert(name, Self::create_spanned(&name_pair, subset));
                     }
-                }
             }
         }
-        Ok(subsets)
+        subsets
     }
 
     /// Parse contributors section
-    fn parse_contributors(pair: Pair<'_>) -> Result<Vec<Spanned<ContributorAst>>> {
+    fn parse_contributors(pair: Pair<'_>) -> Vec<Spanned<ContributorAst>> {
         let mut contributors = Vec::new();
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::contributor_entry {
@@ -713,18 +705,18 @@ impl LinkMLParser {
                 contributors.push(Self::create_spanned(&inner, contributor));
             }
         }
-        Ok(contributors)
+        contributors
     }
 
     /// Parse a list of strings
-    fn parse_string_list(pair: Pair<'_>) -> Result<Vec<Spanned<String>>> {
+    fn parse_string_list(pair: Pair<'_>) -> Vec<Spanned<String>> {
         let mut list = Vec::new();
         for inner in pair.into_inner() {
             if matches!(inner.as_rule(), Rule::identifier | Rule::string_value | Rule::uri) {
                 list.push(Self::create_spanned(&inner, inner.as_str().to_string()));
             }
         }
-        Ok(list)
+        list
     }
 
     /// Parse annotations
